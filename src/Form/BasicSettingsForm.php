@@ -26,9 +26,9 @@ class BasicSettingsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, Drupal $drupal) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $config = $drupal::service('config.factory')->get('auth0.settings');
+    $config = Drupal::service('config.factory')->get('auth0.settings');
 
     $form['auth0_client_id'] = [
       '#type' => 'textfield',
@@ -82,9 +82,9 @@ class BasicSettingsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state, Drupal $drupal) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    $config = $drupal::service('config.factory')->getEditable('auth0.settings');
+    $config = Drupal::service('config.factory')->getEditable('auth0.settings');
     $config->set('auth0_client_id', $form_state->getValue('auth0_client_id'))
       ->set('auth0_client_secret', $form_state->getValue('auth0_client_secret'))
       ->set('auth0_domain', $form_state->getValue('auth0_domain'))
