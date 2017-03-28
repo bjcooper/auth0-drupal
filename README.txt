@@ -71,6 +71,3 @@ When you install this plugin you have at least one existing user in the database
 Auth0 allows multiple authentication providers. You can have social providers like Facebook, Twitter, Google+, etc., you can have a database of users/passwords (just like drupal but hosted in Auth0) or you can use an Enterprise directory like Active Directory, LDAP, Office365, SAML and others. All those authentication providers might give you an email and a flag indicating whether the email was verified or not. We use that email (only if its verified) to associate a previous **existing** user with the one coming from Auth0.
 
 If the email was not verified and there is an account with that email in drupal, the user will be presented with a message saying that the email was not verified and a link to "Re-send the verification email".
-
-
-

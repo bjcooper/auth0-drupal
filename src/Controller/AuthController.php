@@ -2,13 +2,13 @@
 
 namespace Drupal\auth0\Controller;
 
+use Drupal;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 use Drupal\auth0\Event\Auth0UserSigninEvent;
 use Drupal\auth0\Event\Auth0UserSignupEvent;
@@ -26,10 +26,11 @@ class AuthController extends ControllerBase {
   protected $eventDispatcher;
 
   /**
-   * Inicialize the controller.
+   * Initialize constructor.
+   * @param \Drupal $drupal
    */
   public function __construct() {
-    $this->eventDispatcher = \Drupal::service('event_dispatcher');;
+    $this->eventDispatcher = Drupal::service('event_dispatcher');;
   }
 
   /**
@@ -38,7 +39,7 @@ class AuthController extends ControllerBase {
   public function login() {
     global $base_root;
 
-    $config = \Drupal::service('config.factory')->get('auth0.settings');
+    $config = Drupal::service('config.factory')->get('auth0.settings');
 
     $lockExtraSettings = $config->get('auth0_lock_extra_settings');
 
@@ -46,7 +47,7 @@ class AuthController extends ControllerBase {
       $lockExtraSettings = "{}";
     }
 
-    return array(
+    return [
       '#theme' => 'auth0_login',
       '#domain' => $config->get('auth0_domain'),
       '#clientID' => $config->get('auth0_client_id'),
@@ -56,7 +57,7 @@ class AuthController extends ControllerBase {
       '#loginCSS' => $config->get('auth0_login_css'),
       '#lockExtraSettings' => $lockExtraSettings,
       '#callbackURL' => "$base_root/auth0/callback",
-    );
+    ];
 
   }
 
@@ -66,15 +67,15 @@ class AuthController extends ControllerBase {
   public function callback(Request $request) {
     global $base_root;
 
-    $config = \Drupal::service('config.factory')->get('auth0.settings');
+    $config = Drupal::service('config.factory')->get('auth0.settings');
 
-    $auth0 = new Auth0(array(
-        'domain'        => $config->get('auth0_domain'),
-        'client_id'     => $config->get('auth0_client_id'),
-        'client_secret' => $config->get('auth0_client_secret'),
-        'redirect_uri'  => "$base_root/auth0/callback",
-        'store'         => FALSE
-    ));
+    $auth0 = new Auth0([
+      'domain'        => $config->get('auth0_domain'),
+      'client_id'     => $config->get('auth0_client_id'),
+      'client_secret' => $config->get('auth0_client_secret'),
+      'redirect_uri'  => "$base_root/auth0/callback",
+      'store'         => FALSE,
+    ]);
 
     $userInfo = NULL;
 
@@ -90,7 +91,7 @@ class AuthController extends ControllerBase {
       return $this->processUserLogin($request, $userInfo, $idToken);
     }
     else {
-      drupal_set_message(t('There was a problem logging you in, sorry by the inconvenience.'), 'error');
+      drupal_set_message($this->t('There was a problem logging you in, sorry by the inconvenience.'), 'error');
 
       return new RedirectResponse('/');
     }
@@ -100,7 +101,7 @@ class AuthController extends ControllerBase {
    * Checks if the email is valid.
    */
   protected function validateUserEmail($userInfo) {
-    $config = \Drupal::service('config.factory')->get('auth0.settings');
+    $config = Drupal::service('config.factory')->get('auth0.settings');
     $requires_email = $config->get('auth0_requires_verified_email');
 
     if ($requires_email) {
@@ -122,7 +123,7 @@ class AuthController extends ControllerBase {
     }
     catch (EmailNotSetException $e) {
       drupal_set_message(
-          t('This account does not have an email associated. Please login with a different provider.'),
+          $this->t('This account does not have an email associated. Please login with a different provider.'),
           'error'
       );
       return new RedirectResponse('/');
@@ -131,9 +132,10 @@ class AuthController extends ControllerBase {
       return $this->auth0FailWithVerifyEmail($idToken);
     }
 
-    // See if there is a user in the auth0_user table with the user info client id.
+    // See if there is a user in the auth0_user table with the user info
+    // client id.
     $user = $this->findAuth0User($userInfo['user_id']);
-    
+
     if ($user) {
       // User exists!
       // update the auth0_user with the new userInfo object.
@@ -162,14 +164,15 @@ class AuthController extends ControllerBase {
       return $this->redirect($request->request->get('destination'));
     }
 
-    return $this->redirect('entity.user.canonical', array('user' => $user->id()));
+    return $this->redirect('entity.user.canonical', ['user' => $user->id()]);
   }
 
   /**
    * Create or link a new user based on the auth0 profile.
    */
   protected function signupUser($userInfo) {
-    // If the user doesn't exist we need to either create a new one, or assign him to an existing one.
+    // If the user doesn't exist we need to either create a new one, or assign
+    // him to an existing one.
     $isDatabaseUser = FALSE;
     foreach ($userInfo['identities'] as $identity) {
       if ($identity['provider'] == "auth0") {
@@ -178,17 +181,18 @@ class AuthController extends ControllerBase {
     }
     $joinUser = FALSE;
 
-    // If the user has a verified email or is a database user try to see if there is
-    // a user to join with. The isDatabase is because we don't want to allow database
-    // user creation if there is an existing one with no verified email.
+    // If the user has a verified email or is a database user try to see if
+    // there is a user to join with. The isDatabase is because we don't want to
+    // allow database user creation if there is an existing one with no
+    // verified email.
     if ($userInfo['email_verified'] || $isDatabaseUser) {
       $joinUser = user_load_by_mail($userInfo['email']);
     }
 
     if ($joinUser) {
       // If we are here, we have a potential join user.
-      // Don't allow creation or assignation of user if the email is not verified,
-      // that would be hijacking.
+      // Don't allow creation or assignation of user if the email is not
+      // verified, that would be hijacking.
       if (!$userInfo['email_verified']) {
         throw new EmailNotVerifiedException();
       }
@@ -207,13 +211,13 @@ class AuthController extends ControllerBase {
    */
   protected function auth0FailWithVerifyEmail($idToken) {
 
-    $url = Url::fromRoute('auth0.verify_email', array(), array("query" => array('token' => $idToken)));
+    $url = Url::fromRoute('auth0.verifyEmail', [], ["query" => ['token' => $idToken]]);
 
     drupal_set_message(
-      t("Please verify your email and log in again. Click <a href=@url>here</a> to Resend verification email.",
-        array(
-          '@url' => $url->toString()
-        )
+      $this->t("Please verify your email and log in again. Click <a href=@url>here</a> to Resend verification email.",
+        [
+          '@url' => $url->toString(),
+        ]
     ), 'warning');
 
     return new RedirectResponse('/');
@@ -224,10 +228,10 @@ class AuthController extends ControllerBase {
    */
   protected function findAuth0User($id) {
     $auth0_user = db_select('auth0_user', 'a')
-        ->fields('a', array('drupal_id'))
-        ->condition('auth0_id', $id, '=')
-        ->execute()
-        ->fetchAssoc();
+      ->fields('a', ['drupal_id'])
+      ->condition('auth0_id', $id, '=')
+      ->execute()
+      ->fetchAssoc();
 
     return empty($auth0_user) ? FALSE : User::load($auth0_user['drupal_id']);
   }
@@ -237,11 +241,11 @@ class AuthController extends ControllerBase {
    */
   protected function updateAuth0User($userInfo) {
     db_update('auth0_user')
-        ->fields(array(
-            'auth0_object' => serialize($userInfo)
-        ))
-        ->condition('auth0_id', $userInfo['user_id'], '=')
-        ->execute();
+      ->fields([
+        'auth0_object' => serialize($userInfo),
+      ])
+      ->condition('auth0_id', $userInfo['user_id'], '=')
+      ->execute();
   }
 
   /**
@@ -249,11 +253,11 @@ class AuthController extends ControllerBase {
    */
   protected function insertAuth0User($userInfo, $uid) {
 
-    db_insert('auth0_user')->fields(array(
-        'auth0_id' => $userInfo['user_id'],
-        'drupal_id' => $uid,
-        'auth0_object' => json_encode($userInfo)
-      ))->execute();
+    db_insert('auth0_user')->fields([
+      'auth0_id' => $userInfo['user_id'],
+      'drupal_id' => $uid,
+      'auth0_object' => json_encode($userInfo),
+    ])->execute();
 
   }
 
@@ -290,10 +294,10 @@ class AuthController extends ControllerBase {
   /**
    * Send the verification email.
    */
-  public function verify_email(Request $request) {
+  public function verifyEmail(Request $request, Drupal $drupal) {
     $token = $request->get('token');
 
-    $config = \Drupal::service('config.factory')->get('auth0.settings');
+    $config = $drupal::service('config.factory')->get('auth0.settings');
     $secret = $config->get('auth0_client_secret');
 
     try {
@@ -302,23 +306,23 @@ class AuthController extends ControllerBase {
       $userId = $user->sub;
       $domain = $config->get('auth0_domain');
       $url = "https://$domain/api/users/$userId/send_verification_email";
-      
-      $client = \Drupal::httpClient();
-      
-      $client->request('POST', $url, array(
-          "headers" => array(
-            "Authorization" => "Bearer $token"
-          )
-        )
+
+      $client = $drupal::httpClient();
+
+      $client->request('POST', $url, [
+        "headers" => [
+          "Authorization" => "Bearer $token",
+        ],
+      ]
       );
 
-      drupal_set_message(t('An Authorization email was sent to your account'));
+      drupal_set_message($this->t('An Authorization email was sent to your account'));
     }
     catch (\UnexpectedValueException $e) {
-      drupal_set_message(t('Your session has expired.'), 'error');
+      drupal_set_message($this->t('Your session has expired.'), 'error');
     }
     catch (\Exception $e) {
-      drupal_set_message(t('Sorry, we couldnt send the email'), 'error');
+      drupal_set_message($this->t('Sorry, we couldnt send the email'), 'error');
     }
 
     return new RedirectResponse('/');

@@ -1,17 +1,18 @@
 <?php
+
 /**
  * @file
- * Module definition
+ * Module definition.
  */
 
 /**
  * Replace a form with the lock widget.
  */
-function auth0_theme() {  
-  return array(
-    'auth0_login' => array(
+function auth0_theme() {
+  return [
+    'auth0_login' => [
       'template' => 'auth0-login',
-      'variables' => array(
+      'variables' => [
         'domain' => NULL,
         'clientID' => NULL,
         'state' => NULL,
@@ -20,9 +21,9 @@ function auth0_theme() {
         'loginCSS' => NULL,
         'callbackURL' => NULL,
         'lockExtraSettings' => '{}',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 }
 
 /**
