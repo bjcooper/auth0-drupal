@@ -211,7 +211,7 @@ class AuthController extends ControllerBase {
    */
   protected function auth0FailWithVerifyEmail($idToken) {
 
-    $url = Url::fromRoute('auth0.verifyEmail', [], ["query" => ['token' => $idToken]]);
+    $url = Url::fromRoute('auth0.verify_email', [], ["query" => ['token' => $idToken]]);
 
     drupal_set_message(
       $this->t("Please verify your email and log in again. Click <a href=@url>here</a> to Resend verification email.",
