@@ -227,7 +227,7 @@ class AuthController extends ControllerBase {
    * Get the auth0 user profile.
    */
   protected function findAuth0User($id) {
-    $auth0_user = db_select('auth0_user', 'a')
+    $auth0_user = \Drupal::database()->select('auth0_user', 'a')
       ->fields('a', ['drupal_id'])
       ->condition('auth0_id', $id, '=')
       ->execute()
@@ -240,7 +240,7 @@ class AuthController extends ControllerBase {
    * Update the auth0 user profile.
    */
   protected function updateAuth0User($userInfo) {
-    db_update('auth0_user')
+    \Drupal::database()->update('auth0_user')
       ->fields([
         'auth0_object' => serialize($userInfo),
       ])
@@ -253,7 +253,7 @@ class AuthController extends ControllerBase {
    */
   protected function insertAuth0User($userInfo, $uid) {
 
-    db_insert('auth0_user')->fields([
+    \Drupal::database()->insert('auth0_user')->fields([
       'auth0_id' => $userInfo['user_id'],
       'drupal_id' => $uid,
       'auth0_object' => json_encode($userInfo),
