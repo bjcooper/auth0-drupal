@@ -68,12 +68,12 @@ function auth0_install() {
  * Implements hook_uninstall().
  */
 function auth0_uninstall() {
-  variable_del('auth0_login_css');
-  variable_del('auth0_widget_cdn');
-  variable_del('auth0_form_title');
-  variable_del('auth0_requires_verified_email');
-  variable_del('auth0_allow_signup');
-  variable_del('auth0_domain');
-  variable_del('auth0_client_id');
-  variable_del('auth0_client_secret');
+  \Drupal::state()->delete('auth0_login_css');
+  \Drupal::state()->delete('auth0_widget_cdn');
+  \Drupal::state()->delete('auth0_form_title');
+  \Drupal::state()->delete('auth0_requires_verified_email');
+  \Drupal::state()->delete('auth0_allow_signup');
+  \Drupal::state()->delete('auth0_domain');
+  \Drupal::state()->delete('auth0_client_id');
+  \Drupal::state()->delete('auth0_client_secret');
 }
