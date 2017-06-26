@@ -2,35 +2,63 @@
 
 namespace Drupal\auth0\Controller;
 
-use Drupal;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\user\Entity\User;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-
-
 use Drupal\auth0\Event\Auth0UserSigninEvent;
 use Drupal\auth0\Event\Auth0UserSignupEvent;
-
 use Drupal\auth0\Exception\EmailNotSetException;
 use Drupal\auth0\Exception\EmailNotVerifiedException;
-
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Auth0SDK\Auth0;
+use GuzzleHttp\Client;
 
 /**
  * Controller routines for auth0 authentication.
  */
 class AuthController extends ControllerBase {
 
+  /**
+   * The event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   *   The event dispatcher.
+   */
   protected $eventDispatcher;
 
   /**
-   * Initialize constructor.
-   * @param \Drupal $drupal
+   * The http client.
+   *
+   * @var \GuzzleHttp\Client
    */
-  public function __construct() {
-    $this->eventDispatcher = Drupal::service('event_dispatcher');;
+  protected $httpClient;
+
+  /**
+   * Initialize constructor.
+   *
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   The event dispatcher.
+   * @param \GuzzleHttp\Client $http_client
+   *   The http client.
+   */
+  public function __construct(EventDispatcherInterface $event_dispatcher, Client $http_client) {
+    $this->eventDispatcher = $event_dispatcher;
+    $this->httpClient;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('event_dispatcher'),
+      $container->get('http_client'),
+      $container->get('entity_type.manager')
+
+    );
   }
 
   /**
@@ -39,7 +67,7 @@ class AuthController extends ControllerBase {
   public function login() {
     global $base_root;
 
-    $config = Drupal::service('config.factory')->get('auth0.settings');
+    $config = $this->config('auth0.settings');
 
     $lockExtraSettings = $config->get('auth0_lock_extra_settings');
 
@@ -58,16 +86,21 @@ class AuthController extends ControllerBase {
       '#lockExtraSettings' => $lockExtraSettings,
       '#callbackURL' => "$base_root/auth0/callback",
     ];
-
   }
 
   /**
    * Handles the callback for the oauth transaction.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   The response.
    */
   public function callback(Request $request) {
     global $base_root;
 
-    $config = Drupal::service('config.factory')->get('auth0.settings');
+    $config = $this->config('auth0.settings');
 
     $auth0 = new Auth0([
       'domain'        => $config->get('auth0_domain'),
@@ -99,9 +132,18 @@ class AuthController extends ControllerBase {
 
   /**
    * Checks if the email is valid.
+   *
+   * @param object $userInfo
+   *   The auth0 user information.
+   *
+   * @throws \Drupal\auth0\Exception\EmailNotSetException
+   *   Email not set exception.
+   *
+   * @throws \Drupal\auth0\Exception\EmailNotVerifiedException
+   *   Email not verified exception.
    */
   protected function validateUserEmail($userInfo) {
-    $config = Drupal::service('config.factory')->get('auth0.settings');
+    $config = $this->config('auth0.settings');
     $requires_email = $config->get('auth0_requires_verified_email');
 
     if ($requires_email) {
@@ -116,6 +158,16 @@ class AuthController extends ControllerBase {
 
   /**
    * Process the auth0 user profile and signin or signup the user.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   * @param object $userInfo
+   *   The auth0 user information.
+   * @param string $idToken
+   *   The auth0 token.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   The redirect.
    */
   protected function processUserLogin(Request $request, $userInfo, $idToken) {
     try {
@@ -169,6 +221,15 @@ class AuthController extends ControllerBase {
 
   /**
    * Create or link a new user based on the auth0 profile.
+   *
+   * @param string $userInfo
+   *   The auth0 user information.
+   *
+   * @return bool|\Drupal\Core\Entity\EntityInterface|static
+   *   The user interface.
+   *
+   * @throws \Drupal\auth0\Exception\EmailNotVerifiedException
+   *   Email verification exception.
    */
   protected function signupUser($userInfo) {
     // If the user doesn't exist we need to either create a new one, or assign
@@ -208,6 +269,12 @@ class AuthController extends ControllerBase {
 
   /**
    * Email not verified error message.
+   *
+   * @param string $idToken
+   *   The auth0 id token.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   The redirect response.
    */
   protected function auth0FailWithVerifyEmail($idToken) {
 
@@ -225,6 +292,12 @@ class AuthController extends ControllerBase {
 
   /**
    * Get the auth0 user profile.
+   *
+   * @param int $id
+   *   The user Id.
+   *
+   * @return bool|\Drupal\Core\Entity\EntityInterface|null|static
+   *   The user interface.
    */
   protected function findAuth0User($id) {
     $auth0_user = \Drupal::database()->select('auth0_user', 'a')
@@ -233,11 +306,16 @@ class AuthController extends ControllerBase {
       ->execute()
       ->fetchAssoc();
 
-    return empty($auth0_user) ? FALSE : User::load($auth0_user['drupal_id']);
+    return empty($auth0_user)
+      ? FALSE
+      : $this->entityTypeManager()->getStorage('user')->load($auth0_user['drupal_id']);
   }
 
   /**
    * Update the auth0 user profile.
+   *
+   * @param object $userInfo
+   *   The auth0 user information.
    */
   protected function updateAuth0User($userInfo) {
     \Drupal::database()->update('auth0_user')
@@ -250,6 +328,13 @@ class AuthController extends ControllerBase {
 
   /**
    * Insert the auth0 user.
+   *
+   * @param object $userInfo
+   *   The auth0 user info.
+   * @param int $uid
+   *   The drupal user id.
+   *
+   * @throws \Exception
    */
   protected function insertAuth0User($userInfo, $uid) {
 
@@ -263,6 +348,12 @@ class AuthController extends ControllerBase {
 
   /**
    * Create the Drupal user based on the Auth0 user profile.
+   *
+   * @param object $userInfo
+   *   The auth0 user information.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|static
+   *   The user interface.
    */
   protected function createDrupalUser($userInfo) {
 
@@ -293,11 +384,18 @@ class AuthController extends ControllerBase {
 
   /**
    * Send the verification email.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   The redirect response.
    */
-  public function verifyEmail(Request $request, Drupal $drupal) {
+  public function verifyEmail(Request $request) {
     $token = $request->get('token');
 
-    $config = $drupal::service('config.factory')->get('auth0.settings');
+    // Update this.
+    $config = $this->config('auth0.settings');
     $secret = $config->get('auth0_client_secret');
 
     try {
@@ -307,7 +405,7 @@ class AuthController extends ControllerBase {
       $domain = $config->get('auth0_domain');
       $url = "https://$domain/api/users/$userId/send_verification_email";
 
-      $client = $drupal::httpClient();
+      $client = $this->httpClient;
 
       $client->request('POST', $url, [
         "headers" => [
