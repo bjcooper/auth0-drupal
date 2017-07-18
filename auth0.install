@@ -9,31 +9,31 @@
  * Implements hook_schema().
  */
 function auth0_schema() {
-  $schema['auth0_user'] = [
+  $schema['auth0_user'] = array(
     'description' => 'Joins auth0 users with drupal users.',
-    'fields' => [
-      'auth0_id' => [
+    'fields' => array(
+      'auth0_id' => array(
         'description' => 'The user id on auth0',
         'type' => 'varchar',
         'length' => 100,
         'not null' => TRUE,
-      ],
-      'drupal_id' => [
+      ),
+      'drupal_id' => array(
         'description' => 'The user id on drupal',
         'type' => 'int',
         'not null' => TRUE,
-      ],
-      'auth0_object' => [
+      ),
+      'auth0_object' => array(
         'description' => 'A serialized version of the auth0 user',
         'type' => 'text',
         'not null' => TRUE,
-      ],
-    ],
-    'indexes' => [
-      'drupal_id' => ['drupal_id'],
-    ],
-    'primary key' => ['auth0_id'],
-  ];
+      ),
+    ),
+    'indexes' => array(
+      'drupal_id' => array('drupal_id'),
+    ),
+    'primary key' => array('auth0_id'),
+  );
 
   return $schema;
 }
@@ -42,6 +42,7 @@ function auth0_schema() {
  * Implements hook_install().
  */
 function auth0_install() {
+  drupal_install_schema('auth0_user_services');
   $css = "
 #a0-widget .a0-panel {
     min-width: 90%;
@@ -56,24 +57,20 @@ function auth0_install() {
 
   $config = \Drupal::service('config.factory')->getEditable('auth0.settings');
   $config->set('auth0_login_css', $css)
-    ->set('auth0_widget_cdn', 'https://cdn.auth0.com/js/lock/10.2/lock.min.js')
-    ->set('auth0_form_title', 'Sign In')
-    ->set('auth0_requires_verified_email', TRUE)
-    ->set('auth0_allow_signup', TRUE)
-    ->set('auth0_lock_extra_settings', '')
-    ->save();
+          ->set('auth0_widget_cdn', 'https://cdn.auth0.com/js/lock/10.2/lock.min.js')
+          ->set('auth0_form_title', 'Sign In')
+          ->set('auth0_requires_verified_email', TRUE)
+          ->set('auth0_allow_signup', TRUE)
+          ->set('auth0_redirect_for_sso', FALSE)
+          ->set('auth0_lock_extra_settings', '')
+          ->save();
 }
 
 /**
  * Implements hook_uninstall().
  */
 function auth0_uninstall() {
-  \Drupal::state()->delete('auth0_login_css');
-  \Drupal::state()->delete('auth0_widget_cdn');
-  \Drupal::state()->delete('auth0_form_title');
-  \Drupal::state()->delete('auth0_requires_verified_email');
-  \Drupal::state()->delete('auth0_allow_signup');
-  \Drupal::state()->delete('auth0_domain');
-  \Drupal::state()->delete('auth0_client_id');
-  \Drupal::state()->delete('auth0_client_secret');
+  $config = \Drupal::service('config.factory');
+  $auth0_config = $config->getEditable('auth0.settings');
+  $auth0_config->delete();
 }

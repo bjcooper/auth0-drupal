@@ -1,5 +1,4 @@
 <?php
-
 namespace Drupal\auth0\Exception;
 
 /**

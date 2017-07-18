@@ -12,7 +12,7 @@
     lock_options.auth.responseType = lock_options.auth.responseType || 'code';
     lock_options.auth.params = lock_options.auth.params || {};
     lock_options.auth.params.scope = lock_options.auth.params.scope || 'openid email';
-    lock_options.auth.params.state = lock_options.auth.params.state || '{{state}}';
+    lock_options.auth.params.state = '{{state}}';
 
     var lock = new Auth0Lock('{{clientID}}','{{domain}}', lock_options);
 

@@ -1,18 +1,17 @@
 <?php
-
 /**
  * @file
- * Module definition.
+ * Module definition
  */
 
 /**
  * Replace a form with the lock widget.
  */
-function auth0_theme() {
-  return [
-    'auth0_login' => [
+function auth0_theme() {  
+  return array(
+    'auth0_login' => array(
       'template' => 'auth0-login',
-      'variables' => [
+      'variables' => array(
         'domain' => NULL,
         'clientID' => NULL,
         'state' => NULL,
@@ -21,16 +20,16 @@ function auth0_theme() {
         'loginCSS' => NULL,
         'callbackURL' => NULL,
         'lockExtraSettings' => '{}',
-      ],
-    ],
-  ];
+      ),
+    ),
+  );
 }
 
 /**
  * Handle users deletion, it shoudl delete the auth0 profile.
  */
 function auth0_user_delete($account) {
-  \Drupal::database()->delete('auth0_user')
+  db_delete('auth0_user')
     ->condition('drupal_id', $account->uid->value)
     ->execute();
 }
