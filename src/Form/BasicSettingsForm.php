@@ -26,6 +26,7 @@ class BasicSettingsForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
+    /** @var \Drupal\Core\Config\ImmutableConfig $config */
     $config = \Drupal::service('config.factory')->get('auth0.settings');
 
     $form['auth0_client_id'] = array(
@@ -53,6 +54,13 @@ class BasicSettingsForm extends FormBase {
       '#title' => t('Domain'),
       '#default_value' => $config->get('auth0_domain', ''),
       '#description' => t('Your Auth0 domain, you can see it in the auth0 dashboard.'),
+      '#required' => TRUE,
+    );
+    $form['auth0_jwt_leeway'] = array(
+      '#type' => 'number',
+      '#title' => $this->t('JWT Leeway'),
+      '#default_value' => $config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT,
+      '#description' => $this->t('A leeway (in seconds) to account for when there is a clock skew times between the signing and verifying servers.'),
       '#required' => TRUE,
     );
     $form['auth0_jwt_signature_alg'] = array(
@@ -107,6 +115,7 @@ class BasicSettingsForm extends FormBase {
     $config->set('auth0_client_id', $form_state->getValue('auth0_client_id'))
             ->set('auth0_client_secret', $form_state->getValue('auth0_client_secret'))
             ->set('auth0_domain', $form_state->getValue('auth0_domain'))
+            ->set('auth0_jwt_leeway', $form_state->getValue('auth0_jwt_leeway'))
             ->set('auth0_jwt_signature_alg', $form_state->getValue('auth0_jwt_signature_alg'))
             ->set('auth0_secret_base64_encoded', $form_state->getValue('auth0_secret_base64_encoded'))
             ->save();

@@ -8,6 +8,7 @@ use Drupal\user\Entity\User;
 use Drupal\user\PrivateTempStoreFactory;
 use Drupal\Core\Session\SessionManagerInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
+use Firebase\JWT\JWT;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -188,6 +189,7 @@ class AuthController extends ControllerBase {
   public function callback(Request $request) {
     global $base_root;
 
+    /** @var \Drupal\Core\Config\ImmutableConfig $config */
     $config = \Drupal::service('config.factory')->get('auth0.settings');
 
     /* Check for errors */
@@ -238,6 +240,7 @@ class AuthController extends ControllerBase {
     $auth0_settings['secret_base64_encoded'] = $this->secret_base64_encoded;
     $jwt_verifier = new JWTVerifier($auth0_settings);
     try {
+      JWT::$leeway = $config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT;
       $user = $jwt_verifier->verifyAndDecode($idToken);
     }
     catch(\Exception $e) {
@@ -506,6 +509,9 @@ class AuthController extends ControllerBase {
    * Send the verification email.
    */
   public function verify_email(Request $request) {
+    /** @var \Drupal\Core\Config\ImmutableConfig $config */
+    $config = \Drupal::service('config.factory')->get('auth0.settings');
+
     $idToken = $request->get('idToken');
 
     /**
@@ -520,6 +526,7 @@ class AuthController extends ControllerBase {
     $auth0_settings['secret_base64_encoded'] = $this->secret_base64_encoded;
     $jwt_verifier = new JWTVerifier($auth0_settings);
     try {
+      JWT::$leeway = $config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT;
       $user = $jwt_verifier->verifyAndDecode($idToken);
     }
     catch(\Exception $e) {
