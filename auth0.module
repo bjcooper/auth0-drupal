@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * Module definition
+ * Auth0 module.
  */
 
 /**
@@ -12,11 +13,11 @@ const AUTH0_JWT_LEEWAY_DEFAULT = 180;
 /**
  * Replace a form with the lock widget.
  */
-function auth0_theme() {  
-  return array(
-    'auth0_login' => array(
+function auth0_theme() {
+  return [
+    'auth0_login' => [
       'template' => 'auth0-login',
-      'variables' => array(
+      'variables' => [
         'domain' => NULL,
         'clientID' => NULL,
         'state' => NULL,
@@ -25,20 +26,10 @@ function auth0_theme() {
         'loginCSS' => NULL,
         'callbackURL' => NULL,
         'lockExtraSettings' => '{}',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 }
-
-/**
- * Handle users deletion, it shoudl delete the auth0 profile.
- */
-function auth0_user_delete($account) {
-  db_delete('auth0_user')
-    ->condition('drupal_id', $account->uid->value)
-    ->execute();
-}
-
 
 /**
  * Implements hook_library_info_build().
@@ -49,7 +40,7 @@ function auth0_library_info_build() {
     'auth0.widget' => [
       'js' => [
         $config->get('auth0_widget_cdn') => [
-          'type' => 'external'
+          'type' => 'external',
         ],
       ],
     ],
