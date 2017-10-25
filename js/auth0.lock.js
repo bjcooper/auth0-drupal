@@ -1,6 +1,6 @@
-(function ($) {
+(function ($, Drupal) {
 
-  "use strict";
+  'use strict';
 
   /**
    * Implements Auth0 Lock
@@ -31,4 +31,4 @@
     }
   }
 
-})(jQuery);
+})(window.jQuery, Drupal);
