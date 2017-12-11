@@ -440,7 +440,7 @@ class AuthController extends ControllerBase {
     $hasIdentities = (is_object($userInfo) && $userInfo->has('identities')) ||
       (is_array($userInfo) && array_key_exists('identities', $userInfo));
     if (!$hasIdentities) {
-      $mgmtClient = new Management($idToken, $this->domain);
+      $mgmtClient = new Management($idToken, $this->config->get(Auth0Helper::AUTH0_DOMAIN));
 
       $user = $mgmtClient->users->get($userInfo['user_id']);
       $userInfo['identities'] = $user['identities'];
