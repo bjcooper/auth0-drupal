@@ -518,11 +518,11 @@ class AuthController extends ControllerBase {
     $idToken = $request->get('idToken');
 
     // Validate the ID Token.
-    $auth0_domain = 'https://' . $this->config->get('domain') . '/';
+    $auth0_domain = 'https://' . $this->config->get(Auth0Helper::AUTH0_DOMAIN) . '/';
     $auth0_settings = [];
     $auth0_settings['authorized_iss'] = [$auth0_domain];
     $auth0_settings['supported_algs'] = [$this->config->get(Auth0Helper::AUTH0_JWT_SIGNING_ALGORITHM)];
-    $auth0_settings['valid_audiences'] = $this->config->get(Auth0Helper::AUTH0_CLIENT_ID);
+    $auth0_settings['valid_audiences'] = [$this->config->get(Auth0Helper::AUTH0_CLIENT_ID)];
     $auth0_settings['client_secret'] = $this->config->get(Auth0Helper::AUTH0_CLIENT_SECRET);
     $auth0_settings['secret_base64_encoded'] = $this->config->get(Auth0Helper::AUTH0_SECRET_ENCODED);
     $jwt_verifier = new JWTVerifier($auth0_settings);
@@ -537,7 +537,7 @@ class AuthController extends ControllerBase {
 
     try {
       $userId = $user->sub;
-      $url = "https://$this->config->get('domain')/api/users/$userId/send_verification_email";
+      $url = $auth0_domain. "api/users/$userId/send_verification_email";
 
       $this->httpClient->request('POST', $url,
         [
