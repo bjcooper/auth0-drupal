@@ -9,6 +9,7 @@ namespace Drupal\auth0\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Auth0\Auth0Helper;
 
 /**
  * This forms handles the basic module configurations.
@@ -32,47 +33,47 @@ class BasicSettingsForm extends FormBase {
 
     $form['auth0_client_id'] = [
       '#type' => 'textfield',
-      '#title' => t('Client id'),
+      '#title' => $this->t('Client id'),
       '#default_value' => $config->get('auth0_client_id', ''),
-      '#description' => t('Application id, copy from the auth0 dashboard.'),
+      '#description' => $this->t('Application id, copy from the auth0 dashboard.'),
       '#required' => TRUE,
     ];
     $form['auth0_client_secret'] = [
       '#type' => 'textfield',
-      '#title' => t('Client secret'),
+      '#title' => $this->t('Client secret'),
       '#default_value' => $config->get('auth0_client_secret', ''),
-      '#description' => t('Application secret, copy from the auth0 dashboard.'),
+      '#description' => $this->t('Application secret, copy from the auth0 dashboard.'),
       '#required' => TRUE,
     ];
     $form['auth0_secret_base64_encoded'] = [
       '#type' => 'checkbox',
-      '#title' => t('Client Secret is Base64 Encoded'),
+      '#title' => $this->t('Client Secret is Base64 Encoded'),
       '#default_value' => $config->get('auth0_secret_base64_encoded'),
-      '#description' => t('This is stated below the client secret in your Auth0 Dashboard for the client.  If your client was created after September 2016, this should be false.'),
+      '#description' => $this->t('This is stated below the client secret in your Auth0 Dashboard for the client.  If your client was created after September 2016, this should be false.'),
     ];
     $form['auth0_domain'] = [
       '#type' => 'textfield',
-      '#title' => t('Domain'),
+      '#title' => $this->t('Domain'),
       '#default_value' => $config->get('auth0_domain', ''),
-      '#description' => t('Your Auth0 domain, you can see it in the auth0 dashboard.'),
+      '#description' => $this->t('Your Auth0 domain, you can see it in the auth0 dashboard.'),
       '#required' => TRUE,
     ];
     $form['auth0_jwt_leeway'] = [
       '#type' => 'number',
       '#title' => $this->t('JWT Leeway'),
-      '#default_value' => $config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT,
+      '#default_value' => $config->get('auth0_jwt_leeway') ?: Auth0Helper::AUTH0_JWT_LEEWAY_DEFAULT,
       '#description' => $this->t('A leeway (in seconds) to account for when there is a clock skew times between the signing and verifying servers.'),
       '#required' => TRUE,
     ];
     $form['auth0_jwt_signature_alg'] = [
       '#type' => 'select',
-      '#title' => t('JWT Signature Algorithm'),
+      '#title' => $this->t('JWT Signature Algorithm'),
       '#options' => [
         'HS256' => $this->t('HS256'),
         'RS256' => $this->t('RS256'),
       ],
       '#default_value' => $config->get('auth0_jwt_signature_alg', 'HS256'),
-      '#description' => t('Your JWT Signing Algorithm for the ID token.  RS256 is recommended, but must be set in the advanced settings under oauth for this client.'),
+      '#description' => $this->t('Your JWT Signing Algorithm for the ID token.  RS256 is recommended, but must be set in the advanced settings under oauth for this client.'),
       '#required' => TRUE,
     ];
 

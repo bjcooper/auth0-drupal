@@ -263,7 +263,7 @@ class AuthController extends ControllerBase {
       $idToken = $this->auth0->getIdToken();
     }
     catch (\Exception $e) {
-      return $this->failLogin(t('There was a problem logging you in, sorry for the inconvenience.'),
+      return $this->failLogin($this->t('There was a problem logging you in, sorry for the inconvenience.'),
         'Failed to exchange code for tokens: ' . $e->getMessage());
     }
 
@@ -277,11 +277,11 @@ class AuthController extends ControllerBase {
     $auth0_settings['secret_base64_encoded'] = $this->config->get(Auth0Helper::AUTH0_SECRET_ENCODED);
     $jwt_verifier = new JWTVerifier($auth0_settings);
     try {
-      JWT::$leeway = $this->config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT;
+      JWT::$leeway = $this->config->get('auth0_jwt_leeway') ?: Auth0Helper::AUTH0_JWT_LEEWAY_DEFAULT;
       $user = $jwt_verifier->verifyAndDecode($idToken);
     }
     catch (\Exception $e) {
-      return $this->failLogin(t('There was a problem logging you in, sorry for the inconvenience.'),
+      return $this->failLogin($this->t('There was a problem logging you in, sorry for the inconvenience.'),
         'Failed to verify and decode the JWT: ' . $e->getMessage());
     }
 
@@ -289,14 +289,14 @@ class AuthController extends ControllerBase {
     $state = $request->get('state', 'invalid');
 
     if (!$this->helper->compareNonce($state)) {
-      return $this->failLogin(t('There was a problem logging you in, sorry for the inconvenience.'),
+      return $this->failLogin($this->t('There was a problem logging you in, sorry for the inconvenience.'),
         "Failed to verify the state ($state)");
     }
 
     // Check the sub if it exists
     // (this will exist if you have enabled OIDC Conformant).
     if ($userInfo['sub'] != $user->sub) {
-      return $this->failLogin(t('There was a problem logging you in, sorry for the inconvenience.'),
+      return $this->failLogin($this->t('There was a problem logging you in, sorry for the inconvenience.'),
         'Failed to verify the JWT sub.');
     }
     elseif (array_key_exists('sub', $userInfo)) {
@@ -307,7 +307,7 @@ class AuthController extends ControllerBase {
       return $this->processUserLogin($request, $userInfo, $idToken);
     }
 
-    return $this->failLogin(t('There was a problem logging you in, sorry for the inconvenience.'),
+    return $this->failLogin($this->t('There was a problem logging you in, sorry for the inconvenience.'),
       'No userInfo found');
   }
 
@@ -354,7 +354,7 @@ class AuthController extends ControllerBase {
       $this->validateUserEmail($userInfo);
     }
     catch (EmailNotSetException $e) {
-      return $this->failLogin(t('This account does not have an email associated. Please login with a different provider.'),
+      return $this->failLogin($this->t('This account does not have an email associated. Please login with a different provider.'),
         'No Email Found');
     }
     catch (EmailNotVerifiedException $e) {
@@ -489,17 +489,23 @@ class AuthController extends ControllerBase {
    */
   protected function auth0FailWithVerifyEmail($idToken) {
 
-    $url = Url::fromRoute('auth0.verify_email');
-    $formText = "<form style='display:none' name='auth0VerifyEmail' action=@url method='post'><input type='hidden' value=@token name='idToken'/></form>";
-    $linkText = "<a href='javascript:null' onClick='document.forms[\"auth0VerifyEmail\"].submit();'>here</a>";
+    $url = Url::fromRoute('auth0.verify_email', [
+      'idToken' => $idToken,
+    ]);
 
-    return $this->failLogin(
-      t($formText . "Please verify your email and log in again. Click $linkText to Resend verification email.",
-        [
-          '@url' => $url->toString(),
-          '@token' => $idToken,
-        ]
-    ), 'Email not verified');
+    $link = [
+      '#type' => 'link',
+      '#url' => $url,
+      '#title' => $this->t('here'),
+    ];
+
+    $message = $this->t("Please verify your email and log in again. Click @link to Resend verification email.",
+      [
+        '@link' => render($link),
+      ]
+    );
+
+    return $this->failLogin($message, 'Email not verified');
   }
 
   /**
@@ -527,17 +533,17 @@ class AuthController extends ControllerBase {
     $auth0_settings['secret_base64_encoded'] = $this->config->get(Auth0Helper::AUTH0_SECRET_ENCODED);
     $jwt_verifier = new JWTVerifier($auth0_settings);
     try {
-      JWT::$leeway = $config->get('auth0_jwt_leeway') ?: AUTH0_JWT_LEEWAY_DEFAULT;
+      JWT::$leeway = $config->get('auth0_jwt_leeway') ?: Auth0Helper::AUTH0_JWT_LEEWAY_DEFAULT;
       $user = $jwt_verifier->verifyAndDecode($idToken);
     }
     catch (\Exception $e) {
-      return $this->failLogin(t('There was a problem resending the verification email, sorry for the inconvenience.'),
+      return $this->failLogin($this->t('There was a problem resending the verification email, sorry for the inconvenience.'),
         "Failed to verify and decode the JWT ($idToken) for the verify email page: " . $e->getMessage());
     }
 
     try {
       $userId = $user->sub;
-      $url = $auth0_domain. "api/users/$userId/send_verification_email";
+      $url = $auth0_domain . "api/users/$userId/send_verification_email";
 
       $this->httpClient->request('POST', $url,
         [
@@ -547,13 +553,13 @@ class AuthController extends ControllerBase {
         ]
       );
 
-      drupal_set_message(t('An Authorization email was sent to your account'));
+      drupal_set_message($this->t('An Authorization email was sent to your account'));
     }
     catch (\UnexpectedValueException $e) {
-      drupal_set_message(t('Your session has expired.'), 'error');
+      drupal_set_message($this->t('Your session has expired.'), 'error');
     }
     catch (\Exception $e) {
-      drupal_set_message(t('Sorry, we couldnt send the email'), 'error');
+      drupal_set_message($this->t('Sorry, we couldnt send the email'), 'error');
     }
 
     return new RedirectResponse('/');

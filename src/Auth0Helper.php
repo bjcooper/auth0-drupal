@@ -25,6 +25,11 @@ class Auth0Helper {
   const AUTH0_SECRET_ENCODED = 'auth0_secret_base64_encoded';
 
   /**
+   * Defines the default JWT leeway.
+   */
+  const AUTH0_JWT_LEEWAY_DEFAULT = 180;
+
+  /**
    * The config.
    *
    * @var \Drupal\Core\Config\ConfigFactory
