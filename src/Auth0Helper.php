@@ -127,7 +127,7 @@ class Auth0Helper {
   public function updateAuth0User(array $userInfo) {
     $this->connection->update('auth0_user')
       ->fields([
-        'auth0_object' => serialize($userInfo),
+        'auth0_object' => json_encode($userInfo),
       ])
       ->condition('auth0_id', $userInfo['user_id'], '=')
       ->execute();
