@@ -16,7 +16,7 @@
       var lockOptions = auth0.lockOptions || {};
 
       lockOptions.container = lockOptions.container || 'auth0-login-form';
-      lockOptions.allowSignUp = lockOptions.allowSignUp || auth0.showSignup ? "true" : "false";
+      lockOptions.allowSignUp = lockOptions.allowSignUp || auth0.showSignup ? 'true' : 'false';
       lockOptions.auth = lockOptions.auth || {};
       lockOptions.auth.container = lockOptions.auth.container || 'auth0-login-form';
       lockOptions.auth.redirectUrl = lockOptions.auth.redirectUrl || auth0.callbackURL;
@@ -29,6 +29,6 @@
 
       lock.show();
     }
-  }
+  };
 
 })(window.jQuery, Drupal);

@@ -23,6 +23,7 @@ auth0.callback:
   defaults:
     _controller: '\Drupal\auth0\Controller\AuthController::callback'
   requirements:
+    # Callback for authentication.
     _access: 'TRUE'
 
 auth0.logout:
@@ -30,7 +31,7 @@ auth0.logout:
   defaults:
     _controller: '\Drupal\auth0\Controller\AuthController::logout'
   requirements:
-    _access: 'TRUE'
+    _user_is_logged_in: 'TRUE'
 
 auth0.verify_email:
   path: '/auth0/verify_email/{idToken}'
@@ -38,6 +39,7 @@ auth0.verify_email:
     _controller: '\Drupal\auth0\Controller\AuthController::verifyEmail'
     idToken: ''
   requirements:
+    # Auth0 token verification.
     _access: 'TRUE'
     idToken: '^[a-zA-Z0-9_]+'
 
