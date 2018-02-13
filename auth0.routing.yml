@@ -41,7 +41,7 @@ auth0.verify_email:
   requirements:
     # Auth0 token verification.
     _access: 'TRUE'
-    idToken: '^[a-zA-Z0-9_]+'
+    idToken: '^[a-zA-Z0-9_.-]+'
 
 auth0.settings:
   path: '/admin/config/auth0'
