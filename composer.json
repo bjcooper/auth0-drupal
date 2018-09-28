@@ -4,8 +4,7 @@
     "license": "MIT",
     "description": "Single Sign On for Enterprises + Social Login + User/Passwords. For all your Drupal instances. Powered by Auth0.",
     "require": {
-        "auth0/auth0-php": "^5.0",
-        "ircmaxell/random-lib": "^1.2"
+        "auth0/auth0-php": "^5.1"
     },
     "authors": [
         {
@@ -15,6 +14,10 @@
         {
             "name": "Carlos Mostek",
             "email": "mostekcm@auth0.com"
+        },
+        {
+            "name": "Josh Cunningham",
+            "email": "josh.cunningham@auth0.com"
         }
     ]
 }

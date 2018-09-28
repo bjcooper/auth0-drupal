@@ -4,7 +4,7 @@ auth0.login:
     _controller: '\Drupal\auth0\Controller\AuthController::login'
     _title: 'Log in'
   requirements:
-    _user_is_logged_in: 'FALSE'
+    _access: 'TRUE'
   options:
     _maintenance_access: TRUE
 
@@ -14,7 +14,7 @@ auth0.legacy_login:
     _form: '\Drupal\user\Form\UserLoginForm'
     _title: 'Log in'
   requirements:
-    _user_is_logged_in: 'FALSE'
+    _access: 'TRUE'
   options:
     _maintenance_access: TRUE
 
@@ -23,7 +23,6 @@ auth0.callback:
   defaults:
     _controller: '\Drupal\auth0\Controller\AuthController::callback'
   requirements:
-    # Callback for authentication.
     _access: 'TRUE'
 
 auth0.logout:
@@ -31,17 +30,14 @@ auth0.logout:
   defaults:
     _controller: '\Drupal\auth0\Controller\AuthController::logout'
   requirements:
-    _user_is_logged_in: 'TRUE'
+    _access: 'TRUE'
 
 auth0.verify_email:
-  path: '/auth0/verify_email/{idToken}'
+  path: '/auth0/verify_email'
   defaults:
-    _controller: '\Drupal\auth0\Controller\AuthController::verifyEmail'
-    idToken: ''
+    _controller: '\Drupal\auth0\Controller\AuthController::verify_email'
   requirements:
-    # Auth0 token verification.
     _access: 'TRUE'
-    idToken: '^[a-zA-Z0-9_.-]+'
 
 auth0.settings:
   path: '/admin/config/auth0'

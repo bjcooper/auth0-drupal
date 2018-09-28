@@ -11,19 +11,19 @@ use Drupal\user\UserInterface;
 class Auth0UserSignupEvent extends Event {
 
   /**
-   * Event name.
+   * The event name.
    */
   const NAME = 'auth0.signup';
 
   /**
-   * The user.
+   * The current user.
    *
    * @var \Drupal\user\UserInterface
    */
   protected $user;
 
   /**
-   * The auth0 profile.
+   * The Auth0 profile.
    *
    * @var array
    */
@@ -33,9 +33,9 @@ class Auth0UserSignupEvent extends Event {
    * Initialize the event.
    *
    * @param \Drupal\user\UserInterface $user
-   *   The user account.
+   *   The current user.
    * @param array $auth0Profile
-   *   The auth0 profile array.
+   *   The Auth0 profile array.
    */
   public function __construct(UserInterface $user, array $auth0Profile) {
     $this->user = $user;
@@ -43,10 +43,10 @@ class Auth0UserSignupEvent extends Event {
   }
 
   /**
-   * Get the drupal user.
+   * Get the Drupal user.
    *
    * @return \Drupal\user\UserInterface
-   *   The user.
+   *   The current user.
    */
   public function getUser() {
     return $this->user;
@@ -56,7 +56,7 @@ class Auth0UserSignupEvent extends Event {
    * Get the Auth0 profile.
    *
    * @return array
-   *   The auth0 profile.
+   *   The Auth0 profile.
    */
   public function getAuth0Profile() {
     return $this->auth0Profile;

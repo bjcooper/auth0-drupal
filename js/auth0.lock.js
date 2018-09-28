@@ -13,19 +13,33 @@
         return;
       }
 
-      var lockOptions = auth0.lockOptions || {};
+      var lock_options = {};
+      if (auth0.lockExtraSettings) {
+        try {
+          lock_options = JSON.parse(auth0.lockExtraSettings);
+        } catch (error) {
+          console.error(auth0.jsonErrorMsg);
+        }
+      }
+      lock_options.container = lock_options.container || 'auth0-login-form';
+      lock_options.allowSignUp = !!( lock_options.allowSignUp || auth0.showSignup );
+      lock_options.auth = lock_options.auth || {};
+      lock_options.auth.container = lock_options.auth.container || 'auth0-login-form';
+      lock_options.auth.redirectUrl = lock_options.auth.redirectUrl || auth0.callbackURL;
+      lock_options.auth.responseType = lock_options.auth.responseType || 'code';
+      lock_options.auth.params = lock_options.auth.params || {};
+      lock_options.auth.params.scope = lock_options.auth.params.scope || auth0.scopes;
+      lock_options.auth.params.state = auth0.state;
+      lock_options.languageDictionary = lock_options.languageDictionary || {};
+      lock_options.languageDictionary.title = lock_options.languageDictionary.title || auth0.formTitle;
 
-      lockOptions.container = lockOptions.container || 'auth0-login-form';
-      lockOptions.allowSignUp = lockOptions.allowSignUp || auth0.showSignup ? 'true' : 'false';
-      lockOptions.auth = lockOptions.auth || {};
-      lockOptions.auth.container = lockOptions.auth.container || 'auth0-login-form';
-      lockOptions.auth.redirectUrl = lockOptions.auth.redirectUrl || auth0.callbackURL;
-      lockOptions.auth.responseType = lockOptions.auth.responseType || 'code';
-      lockOptions.auth.params = lockOptions.auth.params || {};
-      lockOptions.auth.params.scope = lockOptions.auth.params.scope || 'openid email';
-      lockOptions.auth.params.state = lockOptions.auth.params.state || auth0.state;
+      if (auth0.offlineAccess === 'TRUE') {
+        if (lock_options.auth.params.scope.indexOf('offline_access') < 0) {
+          lock_options.auth.params.scope += ' offline_access';
+        }
+      }
 
-      var lock = new Auth0Lock(auth0.clientId, auth0.domain, lockOptions);
+      var lock = new Auth0Lock(auth0.clientId, auth0.domain, lock_options);
 
       lock.show();
     }
