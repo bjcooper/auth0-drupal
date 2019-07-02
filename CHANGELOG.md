@@ -1,5 +1,18 @@
 # Change Log
 
+## [8.x-2.3](https://github.com/auth0/wp-auth0/tree/8.x-2.3) (2019-07-01)
+[Full Changelog](https://github.com/auth0/wp-auth0/compare/8.x-2.2...8.x-2.3)
+
+**Closed issues**
+- Drupal Profile and Auth0 metadata sync [\#146](https://github.com/auth0/auth0-drupal/issues/146)
+- "Please verify your email" message is shown as HTML code [\#145](https://github.com/auth0/auth0-drupal/issues/145)
+- Vendor directory included in drupal 8 distribution [\#143](https://github.com/auth0/auth0-drupal/issues/143)
+
+**Fixed**
+- Fix verify email form output and remove JS [\#147](https://github.com/auth0/auth0-drupal/pull/147) ([joshcanhelp](https://github.com/joshcanhelp))
+- Fix: changes in roles are now detected correctly [\#144](https://github.com/auth0/auth0-drupal/pull/144) ([Phillywonka](https://github.com/Phillywonka))
+- Make sessions persist to fix invalid state [\#140](https://github.com/auth0/auth0-drupal/pull/140) ([bkildow](https://github.com/bkildow))
+
 ## [8.x-2.2](https://github.com/auth0/wp-auth0/tree/8.x-2.2) (2019-05-10)
 [Full Changelog](https://github.com/auth0/wp-auth0/compare/8.x-2.1...8.x-2.2)
 

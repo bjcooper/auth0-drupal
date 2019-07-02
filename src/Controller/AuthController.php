@@ -23,6 +23,7 @@ use Drupal\Core\Session\SessionManagerInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Render\Markup;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -319,7 +320,7 @@ class AuthController extends ControllerBase {
     // we don't actually start it!
     if (!$this->sessionManager->isStarted() && !isset($_SESSION['auth0_is_session_started'])) {
       $_SESSION['auth0_is_session_started'] = 'yes';
-      $this->sessionManager->start();
+      $this->sessionManager->regenerate();
     }
 
     $sessionStateHandler = new SessionStateHandler(new SessionStore());
@@ -608,8 +609,8 @@ class AuthController extends ControllerBase {
    *   The redirect response after fail.
    */
   protected function failLogin($message, $logMessage) {
-    $this->logger->error($logMessage);
     \Drupal::messenger()->addError($message);
+    $this->logger->error($logMessage);
     if ($this->auth0) {
       $this->auth0->logout();
     }
@@ -705,19 +706,19 @@ class AuthController extends ControllerBase {
    */
   protected function auth0FailWithVerifyEmail($idToken) {
 
-    $url = Url::fromRoute('auth0.verify_email', [], []);
-    $formText = "<form style='display:none' name='auth0VerifyEmail' action=@url method='post'><input type='hidden' value=@token name='idToken'/></form>";
-    $linkText = "<a href='javascript:;' onClick='document.forms[\"auth0VerifyEmail\"].submit();'>here</a>";
+    $messageHtml = sprintf('
+      <p>%s.</p>
+      <form name="auth0VerifyEmail" action="%s">
+        <input type="hidden" value="%s" name="idToken" />
+        <input type="submit" value="%s" class="button" />
+      </form>',
+      $this->t('Please verify your email and log in again'),
+      Url::fromRoute('auth0.verify_email', [], [])->toString(),
+      $idToken,
+      $this->t('Resend verification')
+    );
 
-    return $this->failLogin(
-      $this->t("@formText Please verify your email and log in again. Click @linkText to Resend verification email.",
-        [
-          '@formText' => $formText,
-          '@url' => $url->toString(),
-          '@token' => $idToken,
-          '@linkText' => $linkText,
-        ]
-    ), 'Email not verified');
+    return $this->failLogin(Markup::create($messageHtml), 'Email not verified');
   }
 
   /**
@@ -865,20 +866,23 @@ class AuthController extends ControllerBase {
       $user_roles = $user->getRoles();
 
       $new_user_roles = array_merge(array_diff($user_roles, $not_granted), $roles_granted);
-
-      $tmp = array_diff($new_user_roles, $user_roles);
-      if (empty($tmp)) {
-        $this->auth0Logger->notice('no changes to roles detected');
-      }
-      else {
-        $this->auth0Logger->notice('changes to roles detected');
-        $edit['roles'] = $new_user_roles;
-        foreach (array_diff($new_user_roles, $user_roles) as $new_role) {
+      
+      $roles_to_add = array_diff($new_user_roles, $user_roles);
+      $roles_to_remove = array_diff($user_roles, $new_user_roles);
+      
+      if (empty($roles_to_add) && empty($roles_to_remove)) {
+          $this->auth0Logger->notice('no changes to roles detected');
+          return;
+      } 
+         
+      $this->auth0Logger->notice('changes to roles detected');
+      $edit['roles'] = $new_user_roles;
+      
+      foreach ($roles_to_add as $new_role) {
           $user->addRole($new_role);
-        }
-        foreach (array_diff($user_roles, $new_user_roles) as $remove_role) {
+      }
+      foreach ($roles_to_remove as $remove_role) {
           $user->removeRole($remove_role);
-        }
       }
     }
   }
