@@ -45,6 +45,15 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         self::$expectedTelemetry = $infoHeadersData->build();
     }
 
+    public function testThatMethodAndPropertyReturnSameClass()
+    {
+        $api = new Management(uniqid(), uniqid());
+        $this->assertInstanceOf( Management\Users::class, $api->users );
+        $this->assertInstanceOf( Management\Users::class, $api->users() );
+        $api->users = null;
+        $this->assertInstanceOf( Management\Users::class, $api->users() );
+    }
+
     /**
      * Test a get user call.
      *
@@ -56,11 +65,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->get( '__test_user_id__' );
+        $api->call()->users()->get( '__test_user_id__' );
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users/__test_user_id__', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
@@ -78,7 +86,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->update(
+        $api->call()->users()->update(
             '__test_user_id__',
             [
                 'given_name' => '__test_given_name__',
@@ -90,11 +98,11 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals( 'PATCH', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users/__test_user_id__', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
 
         $body = $api->getHistoryBody();
         $this->assertArrayHasKey( 'given_name', $body );
@@ -109,7 +117,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new Management( uniqid(), uniqid() );
 
         try {
-            $api->users->create( [] );
+            $api->users()->create( [] );
             $exception_message = '';
         } catch (\Exception $e) {
             $exception_message = $e->getMessage();
@@ -123,7 +131,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new Management( uniqid(), uniqid() );
 
         try {
-            $api->users->create( [ 'connection' => 'sms' ] );
+            $api->users()->create( [ 'connection' => 'sms' ] );
             $exception_message = '';
         } catch (\Exception $e) {
             $exception_message = $e->getMessage();
@@ -137,7 +145,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new Management( uniqid(), uniqid() );
 
         try {
-            $api->users->create( [ 'connection' => 'email' ] );
+            $api->users()->create( [ 'connection' => 'email' ] );
             $exception_message = '';
         } catch (\Exception $e) {
             $exception_message = $e->getMessage();
@@ -151,7 +159,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new Management( uniqid(), uniqid() );
 
         try {
-            $api->users->create( [ 'connection' => 'auth0', 'email' => uniqid() ] );
+            $api->users()->create( [ 'connection' => 'auth0', 'email' => uniqid() ] );
             $exception_message = '';
         } catch (\Exception $e) {
             $exception_message = $e->getMessage();
@@ -171,7 +179,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->create( [
+        $api->call()->users()->create( [
             'connection' => '__test_connection__',
             'email' => '__test_email__',
             'password' => '__test_password__',
@@ -179,11 +187,11 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
 
         $body = $api->getHistoryBody();
         $this->assertArrayHasKey( 'connection', $body );
@@ -205,11 +213,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll();
+        $api->call()->users()->getAll();
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
@@ -227,7 +234,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [ '__test_parameter__' => '__test_value__' ] );
+        $api->call()->users()->getAll( [ '__test_parameter__' => '__test_value__' ] );
 
         $query = $api->getHistoryQuery();
         $this->assertEquals( '__test_parameter__=__test_value__', $query );
@@ -244,7 +251,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [ 'fields' => 'field1,field2' ], 'field3' );
+        $api->call()->users()->getAll( [ 'fields' => 'field1,field2' ], 'field3' );
 
         $query = $api->getHistoryQuery();
         $this->assertEquals( 'fields=field1,field2', $query );
@@ -264,12 +271,12 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
             new Response( 200, self::$headers ),
         ] );
 
-        $api->call()->users->getAll( [ 'fields' => 'field1,field2' ] );
+        $api->call()->users()->getAll( [ 'fields' => 'field1,field2' ] );
 
         $query = $api->getHistoryQuery();
         $this->assertEquals( 'fields=field1,field2', $query );
 
-        $api->call()->users->getAll( [ 'fields' => [ 'field1', 'field2' ] ] );
+        $api->call()->users()->getAll( [ 'fields' => [ 'field1', 'field2' ] ] );
 
         $query = $api->getHistoryQuery();
         $this->assertEquals( 'fields=field1,field2', $query );
@@ -286,7 +293,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [], [ 'field3', 'field4' ], true );
+        $api->call()->users()->getAll( [], [ 'field3', 'field4' ], true );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'fields=field3,field4', $query );
@@ -304,7 +311,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [ 'include_fields' => false ], [ 'field3' ], true );
+        $api->call()->users()->getAll( [ 'include_fields' => false ], [ 'field3' ], true );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'fields=field3', $query );
@@ -322,7 +329,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [], [ 'field3' ], uniqid() );
+        $api->call()->users()->getAll( [], [ 'field3' ], uniqid() );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'fields=field3', $query );
@@ -343,12 +350,12 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
             new Response( 200, self::$headers ),
         ] );
 
-        $api->call()->users->getAll( [], [], null, 10 );
+        $api->call()->users()->getAll( [], [], null, 10 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'page=10', $query );
 
-        $api->call()->users->getAll( [], [], null, -10 );
+        $api->call()->users()->getAll( [], [], null, -10 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'page=10', $query );
@@ -365,7 +372,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [ 'page' => 11 ], [], null, 22 );
+        $api->call()->users()->getAll( [ 'page' => 11 ], [], null, 22 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'page=11', $query );
@@ -385,12 +392,12 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
             new Response( 200, self::$headers ),
         ] );
 
-        $api->call()->users->getAll( [], [], null, null, 10 );
+        $api->call()->users()->getAll( [], [], null, null, 10 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'per_page=10', $query );
 
-        $api->call()->users->getAll( [], [], null, null, -10 );
+        $api->call()->users()->getAll( [], [], null, null, -10 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'per_page=10', $query );
@@ -407,7 +414,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getAll( [ 'per_page' => 8 ], [], null, null, 9 );
+        $api->call()->users()->getAll( [ 'per_page' => 8 ], [], null, null, 9 );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'per_page=8', $query );
@@ -424,11 +431,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->delete( '__test_user_id__' );
+        $api->call()->users()->delete( '__test_user_id__' );
 
         $this->assertEquals( 'DELETE', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users/__test_user_id__', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
@@ -446,7 +452,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->linkAccount(
+        $api->call()->users()->linkAccount(
             '__test_user_id__',
             [
                 'provider' => '__test_provider__',
@@ -457,11 +463,11 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
         $this->assertEquals( 'https://api.test.local/api/v2/users/__test_user_id__/identities', $api->getHistoryUrl() );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
 
         $body = $api->getHistoryBody();
         $this->assertArrayHasKey( 'provider', $body );
@@ -483,7 +489,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->unlinkAccount(
+        $api->call()->users()->unlinkAccount(
             '__test_user_id__',
             '__test_provider__',
             '__test_identity_id__'
@@ -494,7 +500,6 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
             'https://api.test.local/api/v2/users/__test_user_id__/identities/__test_provider__/__test_identity_id__',
             $api->getHistoryUrl()
         );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
@@ -512,14 +517,13 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->deleteMultifactorProvider( '__test_user_id__', 'duo' );
+        $api->call()->users()->deleteMultifactorProvider( '__test_user_id__', 'duo' );
 
         $this->assertEquals( 'DELETE', $api->getHistoryMethod() );
         $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/multifactor/duo',
             $api->getHistoryUrl()
         );
-        $this->assertEmpty( $api->getHistoryQuery() );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
@@ -538,7 +542,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->getRoles( '' );
+            $api->call()->users()->getRoles( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -558,10 +562,13 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getRoles( '__test_user_id__', [ 'per_page' => 5, 'page' => 1, 'include_totals' => 1 ] );
+        $api->call()->users()->getRoles( '__test_user_id__', [ 'per_page' => 5, 'page' => 1, 'include_totals' => 1 ] );
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
-        $this->assertStringStartsWith( 'https://api.test.local/api/v2/users/__test_user_id__', $api->getHistoryUrl() );
+        $this->assertStringStartsWith(
+            'https://api.test.local/api/v2/users/__test_user_id__/roles?',
+            $api->getHistoryUrl()
+        );
 
         $query = $api->getHistoryQuery();
         $this->assertContains( 'per_page=5', $query );
@@ -585,7 +592,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->removeRoles( '', [] );
+            $api->call()->users()->removeRoles( '', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -606,7 +613,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->removeRoles( '__test_user_id__', [] );
+            $api->call()->users()->removeRoles( '__test_user_id__', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -626,18 +633,18 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->removeRoles( '__test_user_id__', [ '__test_role_id__' ] );
+        $api->call()->users()->removeRoles( '__test_user_id__', [ '__test_role_id__' ] );
 
         $this->assertEquals( 'DELETE', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/roles',
             $api->getHistoryUrl()
         );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
-        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
 
         $body = $api->getHistoryBody();
         $this->assertArrayHasKey( 'roles', $body );
@@ -657,7 +664,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->addRoles( '', [] );
+            $api->call()->users()->addRoles( '', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -678,7 +685,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->addRoles( '__test_user_id__', [] );
+            $api->call()->users()->addRoles( '__test_user_id__', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -698,10 +705,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->addRoles( '__test_user_id__', [ '__test_role_id__' ] );
+        $api->call()->users()->addRoles( '__test_user_id__', [ '__test_role_id__' ] );
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/roles',
             $api->getHistoryUrl()
         );
@@ -729,7 +736,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->getEnrollments( '' );
+            $api->call()->users()->getEnrollments( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -749,7 +756,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getEnrollments( '__test_user_id__' );
+        $api->call()->users()->getEnrollments( '__test_user_id__' );
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
         $this->assertEquals(
@@ -774,7 +781,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->getPermissions( '' );
+            $api->call()->users()->getPermissions( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -794,14 +801,14 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getPermissions(
+        $api->call()->users()->getPermissions(
             '__test_user_id__',
             [ 'per_page' => 3, 'page' => 2, 'include_totals' => 0 ]
         );
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
         $this->assertStringStartsWith(
-            'https://api.test.local/api/v2/users/__test_user_id__/permissions',
+            'https://api.test.local/api/v2/users/__test_user_id__/permissions?',
             $api->getHistoryUrl()
         );
 
@@ -827,7 +834,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->removePermissions( '', [] );
+            $api->call()->users()->removePermissions( '', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -848,7 +855,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->removePermissions( '__test_user_id__', [] );
+            $api->call()->users()->removePermissions( '__test_user_id__', [] );
             $caught_exception = false;
         } catch (InvalidPermissionsArrayException $e) {
             $caught_exception = true;
@@ -868,7 +875,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->removePermissions(
+        $api->call()->users()->removePermissions(
             '__test_user_id__',
             [
                 [
@@ -879,15 +886,15 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( 'DELETE', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/permissions',
             $api->getHistoryUrl()
         );
 
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
-        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
 
         $body = $api->getHistoryBody();
         $this->assertArrayHasKey( 'permissions', $body );
@@ -910,7 +917,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->addPermissions( '', [] );
+            $api->call()->users()->addPermissions( '', [] );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -931,7 +938,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->addPermissions( '__test_user_id__', [] );
+            $api->call()->users()->addPermissions( '__test_user_id__', [] );
             $caught_exception = false;
         } catch (InvalidPermissionsArrayException $e) {
             $caught_exception = true;
@@ -951,7 +958,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->addPermissions(
+        $api->call()->users()->addPermissions(
             '__test_user_id__',
             [
                 [
@@ -962,7 +969,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/permissions',
             $api->getHistoryUrl()
         );
@@ -993,7 +1000,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->getLogs( '' );
+            $api->call()->users()->getLogs( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -1013,14 +1020,14 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->getLogs(
+        $api->call()->users()->getLogs(
             '__test_user_id__',
             [ 'per_page' => 3, 'page' => 2, 'include_totals' => 0, 'fields' => 'date,type,ip' ]
         );
 
         $this->assertEquals( 'GET', $api->getHistoryMethod() );
         $this->assertStringStartsWith(
-            'https://api.test.local/api/v2/users/__test_user_id__/logs',
+            'https://api.test.local/api/v2/users/__test_user_id__/logs?',
             $api->getHistoryUrl()
         );
 
@@ -1047,7 +1054,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->generateRecoveryCode( '' );
+            $api->call()->users()->generateRecoveryCode( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -1067,10 +1074,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->generateRecoveryCode( '__test_user_id__' );
+        $api->call()->users()->generateRecoveryCode( '__test_user_id__' );
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/recovery-code-regeneration',
             $api->getHistoryUrl()
         );
@@ -1078,6 +1085,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
     }
 
     /**
@@ -1092,7 +1100,7 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $api = new MockManagementApi();
 
         try {
-            $api->call()->users->invalidateBrowsers( '' );
+            $api->call()->users()->invalidateBrowsers( '' );
             $caught_message = '';
         } catch (EmptyOrInvalidParameterException $e) {
             $caught_message = $e->getMessage();
@@ -1112,10 +1120,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     {
         $api = new MockManagementApi( [ new Response( 200, self::$headers ) ] );
 
-        $api->call()->users->invalidateBrowsers( '__test_user_id__' );
+        $api->call()->users()->invalidateBrowsers( '__test_user_id__' );
 
         $this->assertEquals( 'POST', $api->getHistoryMethod() );
-        $this->assertStringStartsWith(
+        $this->assertEquals(
             'https://api.test.local/api/v2/users/__test_user_id__/multifactor/actions/invalidate-remember-browser',
             $api->getHistoryUrl()
         );
@@ -1123,5 +1131,6 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
         $headers = $api->getHistoryHeaders();
         $this->assertEquals( 'Bearer __api_token__', $headers['Authorization'][0] );
         $this->assertEquals( self::$expectedTelemetry, $headers['Auth0-Client'][0] );
+        $this->assertEquals( 'application/json', $headers['Content-Type'][0] );
     }
 }

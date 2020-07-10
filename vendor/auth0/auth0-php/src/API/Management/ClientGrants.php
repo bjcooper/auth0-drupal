@@ -33,11 +33,11 @@ class ClientGrants extends GenericResource
     public function getAll(array $params = [], $page = null, $per_page = null)
     {
         if (null !== $page) {
-            $params['page'] = abs((int) $page);
+            $params['page'] = abs( (int) $page);
         }
 
         if (null !== $per_page) {
-            $params['per_page'] = abs((int) $per_page);
+            $params['per_page'] = abs( (int) $per_page);
         }
 
         return $this->apiClient->method('get')
@@ -191,7 +191,7 @@ class ClientGrants extends GenericResource
      */
     public function get($id, $audience = null)
     {
-        $request = $this->apiClient->get()
+        $request = $this->apiClient->method('get')
             ->addPath('client-grants');
 
         if ($audience !== null) {

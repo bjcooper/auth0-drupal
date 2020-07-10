@@ -82,10 +82,8 @@ class GenericResource
             $params['include_totals'] = $include_totals;
         }
 
-        // If include_totals is set (not null), then make sure we have a boolean.
-        if (isset( $params['include_totals'] )) {
-            $params['include_totals'] = boolval( $params['include_totals'] );
-        }
+        // Make sure we have a boolean.
+        $params['include_totals'] = filter_var( $params['include_totals'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 
         return $params;
     }
@@ -106,7 +104,6 @@ class GenericResource
         }
 
         foreach ($permissions as $permission) {
-            
             if (empty( $permission['permission_name'] )) {
                 throw new InvalidPermissionsArrayException();
             }
