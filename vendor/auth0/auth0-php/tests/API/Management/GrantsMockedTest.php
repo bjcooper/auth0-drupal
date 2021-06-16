@@ -1,6 +1,7 @@
 <?php
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\Grants;
 use Auth0\SDK\API\Management;
 use Auth0\SDK\API\Helpers\InformationHeaders;
 use Auth0\SDK\Exception\CoreException;
@@ -8,13 +9,14 @@ use Auth0\SDK\Exception\CoreException;
 use Auth0\Tests\Traits\ErrorHelpers;
 
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class GrantsTestMocked.
  *
  * @package Auth0\Tests\API\Management
  */
-class GrantsTestMocked extends \PHPUnit_Framework_TestCase
+class GrantsTestMocked extends TestCase
 {
 
     use ErrorHelpers;
@@ -39,10 +41,10 @@ class GrantsTestMocked extends \PHPUnit_Framework_TestCase
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Grants::class, $api->grants );
-        $this->assertInstanceOf( Management\Grants::class, $api->grants() );
+        $this->assertInstanceOf( Grants::class, $api->grants );
+        $this->assertInstanceOf( Grants::class, $api->grants() );
         $api->grants = null;
-        $this->assertInstanceOf( Management\Grants::class, $api->grants() );
+        $this->assertInstanceOf( Grants::class, $api->grants() );
     }
 
     /**

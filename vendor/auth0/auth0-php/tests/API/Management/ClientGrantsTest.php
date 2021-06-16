@@ -2,6 +2,7 @@
 
 namespace Auth0\Tests\API;
 
+use Auth0\SDK\API\Management\ClientGrants;
 use Auth0\SDK\API\Management;
 use Auth0\SDK\Exception\CoreException;
 
@@ -66,10 +67,10 @@ class ClientGrantsTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\ClientGrants::class, $api->client_grants );
-        $this->assertInstanceOf( Management\ClientGrants::class, $api->clientGrants() );
+        $this->assertInstanceOf( ClientGrants::class, $api->client_grants );
+        $this->assertInstanceOf( ClientGrants::class, $api->clientGrants() );
         $api->client_grants = null;
-        $this->assertInstanceOf( Management\ClientGrants::class, $api->clientGrants() );
+        $this->assertInstanceOf( ClientGrants::class, $api->clientGrants() );
     }
 
 

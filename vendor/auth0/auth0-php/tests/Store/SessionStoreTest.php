@@ -1,12 +1,13 @@
 <?php
 
 use Auth0\SDK\Store\SessionStore;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class SessionStoreTest.
  * Tests the SessionStore class.
  */
-class SessionStoreTest extends PHPUnit_Framework_TestCase
+class SessionStoreTest extends TestCase
 {
     /**
      * Session key for test values.

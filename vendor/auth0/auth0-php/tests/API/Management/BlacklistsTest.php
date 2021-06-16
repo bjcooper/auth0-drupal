@@ -1,6 +1,7 @@
 <?php
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\Blacklists;
 use Auth0\SDK\API\Helpers\InformationHeaders;
 use Auth0\SDK\API\Management;
 use Auth0\Tests\API\ApiTests;
@@ -80,10 +81,10 @@ class BlacklistsTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Blacklists::class, $api->blacklists );
-        $this->assertInstanceOf( Management\Blacklists::class, $api->blacklists() );
+        $this->assertInstanceOf( Blacklists::class, $api->blacklists );
+        $this->assertInstanceOf( Blacklists::class, $api->blacklists() );
         $api->blacklists = null;
-        $this->assertInstanceOf( Management\Blacklists::class, $api->blacklists() );
+        $this->assertInstanceOf( Blacklists::class, $api->blacklists() );
     }
 
     /**

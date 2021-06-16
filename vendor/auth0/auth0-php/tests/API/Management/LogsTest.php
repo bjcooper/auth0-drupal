@@ -2,6 +2,7 @@
 
 namespace Auth0\Tests\API;
 
+use Auth0\SDK\API\Management\Logs;
 use Auth0\SDK\API\Management;
 
 /**
@@ -39,10 +40,10 @@ class LogsTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Logs::class, $api->logs );
-        $this->assertInstanceOf( Management\Logs::class, $api->logs() );
+        $this->assertInstanceOf( Logs::class, $api->logs );
+        $this->assertInstanceOf( Logs::class, $api->logs() );
         $api->logs = null;
-        $this->assertInstanceOf( Management\Logs::class, $api->logs() );
+        $this->assertInstanceOf( Logs::class, $api->logs() );
     }
 
     /**

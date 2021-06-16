@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp;
 
+use function GuzzleHttp\Psr7\str;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -80,10 +81,10 @@ class MessageFormatter
                 $result = '';
                 switch ($matches[1]) {
                     case 'request':
-                        $result = Psr7\str($request);
+                        $result = str($request);
                         break;
                     case 'response':
-                        $result = $response ? Psr7\str($response) : '';
+                        $result = $response ? str($response) : '';
                         break;
                     case 'req_headers':
                         $result = trim($request->getMethod()

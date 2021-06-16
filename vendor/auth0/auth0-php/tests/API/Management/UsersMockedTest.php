@@ -1,6 +1,7 @@
 <?php
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\Users;
 use Auth0\SDK\API\Management;
 use Auth0\SDK\Exception\CoreException;
 use Auth0\SDK\Exception\EmptyOrInvalidParameterException;
@@ -10,13 +11,14 @@ use Auth0\Tests\Traits\ErrorHelpers;
 use Auth0\SDK\API\Helpers\InformationHeaders;
 
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class UsersMockedTest.
  *
  * @package Auth0\Tests\API\Management
  */
-class UsersMockedTest extends \PHPUnit_Framework_TestCase
+class UsersMockedTest extends TestCase
 {
 
     use ErrorHelpers;
@@ -48,10 +50,10 @@ class UsersMockedTest extends \PHPUnit_Framework_TestCase
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Users::class, $api->users );
-        $this->assertInstanceOf( Management\Users::class, $api->users() );
+        $this->assertInstanceOf( Users::class, $api->users );
+        $this->assertInstanceOf( Users::class, $api->users() );
         $api->users = null;
-        $this->assertInstanceOf( Management\Users::class, $api->users() );
+        $this->assertInstanceOf( Users::class, $api->users() );
     }
 
     /**

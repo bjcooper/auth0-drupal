@@ -2,6 +2,7 @@
 
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\ResourceServers;
 use Auth0\SDK\API\Management;
 use Auth0\Tests\API\ApiTests;
 use GuzzleHttp\Exception\ClientException;
@@ -64,10 +65,10 @@ class ResourceServersTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\ResourceServers::class, $api->resource_servers );
-        $this->assertInstanceOf( Management\ResourceServers::class, $api->resourceServers() );
+        $this->assertInstanceOf( ResourceServers::class, $api->resource_servers );
+        $this->assertInstanceOf( ResourceServers::class, $api->resourceServers() );
         $api->resource_servers = null;
-        $this->assertInstanceOf( Management\ResourceServers::class, $api->resourceServers() );
+        $this->assertInstanceOf( ResourceServers::class, $api->resourceServers() );
     }
 
     /**

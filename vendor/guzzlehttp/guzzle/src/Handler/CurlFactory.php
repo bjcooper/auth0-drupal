@@ -1,6 +1,10 @@
 <?php
 namespace GuzzleHttp\Handler;
 
+use function GuzzleHttp\Promise\rejection_for;
+use function GuzzleHttp\Psr7\stream_for;
+use function GuzzleHttp\is_host_in_noproxy;
+use function GuzzleHttp\debug_resource;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\FulfilledPromise;
@@ -168,7 +172,7 @@ class CurlFactory implements CurlFactoryInterface
         // If an exception was encountered during the onHeaders event, then
         // return a rejected promise that wraps that exception.
         if ($easy->onHeadersException) {
-            return \GuzzleHttp\Promise\rejection_for(
+            return rejection_for(
                 new RequestException(
                     'An error was encountered during the on_headers event',
                     $easy->request,
@@ -200,7 +204,7 @@ class CurlFactory implements CurlFactoryInterface
             ? new ConnectException($message, $easy->request, null, $ctx)
             : new RequestException($message, $easy->request, $easy->response, null, $ctx);
 
-        return \GuzzleHttp\Promise\rejection_for($error);
+        return rejection_for($error);
     }
 
     private function getDefaultConf(EasyHandle $easy)
@@ -379,7 +383,7 @@ class CurlFactory implements CurlFactoryInterface
         if (isset($options['sink'])) {
             $sink = $options['sink'];
             if (!is_string($sink)) {
-                $sink = \GuzzleHttp\Psr7\stream_for($sink);
+                $sink = stream_for($sink);
             } elseif (!is_dir(dirname($sink))) {
                 // Ensure that the directory exists before failing in curl.
                 throw new \RuntimeException(sprintf(
@@ -397,7 +401,7 @@ class CurlFactory implements CurlFactoryInterface
         } else {
             // Use a default temp stream if no sink was set.
             $conf[CURLOPT_FILE] = fopen('php://temp', 'w+');
-            $easy->sink = Psr7\stream_for($conf[CURLOPT_FILE]);
+            $easy->sink = stream_for($conf[CURLOPT_FILE]);
         }
         $timeoutRequiresNoSignal = false;
         if (isset($options['timeout'])) {
@@ -431,7 +435,7 @@ class CurlFactory implements CurlFactoryInterface
                 if (isset($options['proxy'][$scheme])) {
                     $host = $easy->request->getUri()->getHost();
                     if (!isset($options['proxy']['no']) ||
-                        !\GuzzleHttp\is_host_in_noproxy($host, $options['proxy']['no'])
+                        !is_host_in_noproxy($host, $options['proxy']['no'])
                     ) {
                         $conf[CURLOPT_PROXY] = $options['proxy'][$scheme];
                     }
@@ -491,7 +495,7 @@ class CurlFactory implements CurlFactoryInterface
         }
 
         if (!empty($options['debug'])) {
-            $conf[CURLOPT_STDERR] = \GuzzleHttp\debug_resource($options['debug']);
+            $conf[CURLOPT_STDERR] = debug_resource($options['debug']);
             $conf[CURLOPT_VERBOSE] = true;
         }
     }

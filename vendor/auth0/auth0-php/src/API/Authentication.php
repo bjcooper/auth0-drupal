@@ -8,6 +8,7 @@
  */
 namespace Auth0\SDK\API;
 
+use function GuzzleHttp\Psr7\build_query;
 use Auth0\SDK\API\Header\Authorization\AuthorizationBearer;
 use Auth0\SDK\API\Header\ContentType;
 use Auth0\SDK\API\Header\ForwardedFor;
@@ -146,7 +147,7 @@ class Authentication
         return sprintf(
             'https://%s/authorize?%s',
             $this->domain,
-            Psr7\build_query($additional_params)
+            build_query($additional_params)
         );
     }
 
@@ -209,7 +210,7 @@ class Authentication
             'https://%s/wsfed/%s?%s',
             $this->domain,
             empty($client_id) ? $this->client_id : $client_id,
-            Psr7\build_query($params)
+            build_query($params)
         );
     }
 
@@ -255,7 +256,7 @@ class Authentication
         return sprintf(
             'https://%s/v2/logout?%s',
             $this->domain,
-            Psr7\build_query($params)
+            build_query($params)
         );
     }
 

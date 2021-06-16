@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp\Exception;
 
+use function GuzzleHttp\Psr7\get_message_body_summary;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -124,7 +125,7 @@ class RequestException extends TransferException
      */
     public static function getResponseBodySummary(ResponseInterface $response)
     {
-        return \GuzzleHttp\Psr7\get_message_body_summary($response);
+        return get_message_body_summary($response);
     }
 
     /**

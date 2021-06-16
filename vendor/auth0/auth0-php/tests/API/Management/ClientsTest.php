@@ -2,6 +2,7 @@
 
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\Clients;
 use Auth0\SDK\API\Helpers\InformationHeaders;
 use Auth0\SDK\API\Management;
 use Auth0\Tests\API\ApiTests;
@@ -42,10 +43,10 @@ class ClientsTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Clients::class, $api->clients );
-        $this->assertInstanceOf( Management\Clients::class, $api->clients() );
+        $this->assertInstanceOf( Clients::class, $api->clients );
+        $this->assertInstanceOf( Clients::class, $api->clients() );
         $api->clients = null;
-        $this->assertInstanceOf( Management\Clients::class, $api->clients() );
+        $this->assertInstanceOf( Clients::class, $api->clients() );
     }
 
     /**

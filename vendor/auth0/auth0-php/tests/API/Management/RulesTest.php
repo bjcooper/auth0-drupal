@@ -1,6 +1,7 @@
 <?php
 namespace Auth0\Tests\API\Management;
 
+use Auth0\SDK\API\Management\Rules;
 use Auth0\SDK\API\Management;
 use Auth0\SDK\Exception\CoreException;
 
@@ -36,10 +37,10 @@ class RulesTest extends ApiTests
     public function testThatMethodAndPropertyReturnSameClass()
     {
         $api = new Management(uniqid(), uniqid());
-        $this->assertInstanceOf( Management\Rules::class, $api->rules );
-        $this->assertInstanceOf( Management\Rules::class, $api->rules() );
+        $this->assertInstanceOf( Rules::class, $api->rules );
+        $this->assertInstanceOf( Rules::class, $api->rules() );
         $api->rules = null;
-        $this->assertInstanceOf( Management\Rules::class, $api->rules() );
+        $this->assertInstanceOf( Rules::class, $api->rules() );
     }
 
     /**

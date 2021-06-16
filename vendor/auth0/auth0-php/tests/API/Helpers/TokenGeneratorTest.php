@@ -9,13 +9,14 @@ use Auth0\SDK\Exception\InvalidTokenException;
 use Auth0\Tests\Traits\ErrorHelpers;
 use Auth0\SDK\Helpers\JWKFetcher;
 use Firebase\JWT\JWT;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class TokenTest
  *
  * @package Auth0\Tests\Api\Helpers
  */
-class TokenTest extends \PHPUnit_Framework_TestCase
+class TokenTest extends TestCase
 {
 
     use ErrorHelpers;

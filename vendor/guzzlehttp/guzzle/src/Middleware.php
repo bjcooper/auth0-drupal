@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp;
 
+use function GuzzleHttp\Promise\rejection_for;
 use GuzzleHttp\Cookie\CookieJarInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\RejectedPromise;
@@ -102,7 +103,7 @@ final class Middleware
                             'error'    => $reason,
                             'options'  => $options
                         ];
-                        return \GuzzleHttp\Promise\rejection_for($reason);
+                        return rejection_for($reason);
                     }
                 );
             };
@@ -198,7 +199,7 @@ final class Middleware
                             : null;
                         $message = $formatter->format($request, $response, $reason);
                         $logger->notice($message);
-                        return \GuzzleHttp\Promise\rejection_for($reason);
+                        return rejection_for($reason);
                     }
                 );
             };

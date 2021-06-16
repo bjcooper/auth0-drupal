@@ -12,13 +12,14 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class Auth0Test
  *
  * @package Auth0\Tests
  */
-class Auth0Test extends \PHPUnit_Framework_TestCase
+class Auth0Test extends TestCase
 {
 
     use ErrorHelpers;

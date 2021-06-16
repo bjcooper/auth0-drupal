@@ -1,6 +1,7 @@
 <?php
 namespace Auth0\SDK;
 
+use Auth0\SDK\API\Authentication;
 /**
  * This class provides access to Auth0 Platform auth API.
  *
@@ -8,7 +9,7 @@ namespace Auth0\SDK;
  *
  * @codeCoverageIgnore - Deprecated
  */
-class Auth0AuthApi extends \Auth0\SDK\API\Authentication
+class Auth0AuthApi extends Authentication
 {
 
 }

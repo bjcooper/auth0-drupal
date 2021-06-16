@@ -5,13 +5,14 @@ use \Auth0\SDK\Helpers\Cache\CacheHandler;
 use Auth0\SDK\Helpers\Cache\FileSystemCacheHandler;
 use \Auth0\SDK\Helpers\JWKFetcher;
 use \GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class JWKFetcherTest.
  *
  * @package Auth0\Tests\Helpers\Cache
  */
-class JWKFetcherTest extends \PHPUnit_Framework_TestCase
+class JWKFetcherTest extends TestCase
 {
 
     public function testThatGetFormattedReturnsKeys()
