@@ -255,6 +255,14 @@ class AuthController extends ControllerBase {
 
     $returnTo = $request->request->get('returnTo', $request->query->get('returnTo', NULL));
 
+    // If the 'destination' parameter is set, core will highjack our redirect.
+    // Unset it if it exists, and fall back to using it if no 'returnTo' is set.
+    $destination = $request->query->get('destination', NULL);
+    if ($destination) {
+      $request->query->remove('destination');
+      $returnTo = $returnTo ?? $destination;
+    }
+
     // If supporting SSO, redirect to the hosted login page for authorization.
     if ($this->redirectForSso) {
       return new TrustedRedirectResponse($this->buildAuthorizeUrl(NULL, $returnTo));
