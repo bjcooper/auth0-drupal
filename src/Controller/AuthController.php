@@ -34,15 +34,14 @@ use Drupal\auth0\Event\Auth0UserSignupEvent;
 use Drupal\auth0\Event\Auth0UserPreLoginEvent;
 use Drupal\auth0\Exception\EmailNotSetException;
 use Drupal\auth0\Exception\EmailNotVerifiedException;
-use Drupal\Core\PageCache\ResponsePolicyInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\auth0\Util\AuthHelper;
 
-use Auth0\SDK\JWTVerifier;
 use Auth0\SDK\Auth0;
 use Auth0\SDK\API\Authentication;
-use Auth0\SDK\API\Helpers\State\SessionStateHandler;
 use Auth0\SDK\Store\SessionStore;
+use Auth0\SDK\Utility\TransientStoreHandler;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use GuzzleHttp\Client;
 
 /**
@@ -63,8 +62,25 @@ class AuthController extends ControllerBase {
   const AUTH0_SECRET_ENCODED = 'auth0_secret_base64_encoded';
   const AUTH0_OFFLINE_ACCESS = 'auth0_allow_offline_access';
 
+  /**
+   * The EventDispatcherInterface.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
   protected $eventDispatcher;
+
+  /**
+   * The PrivateTempStore.
+   *
+   * @var \Drupal\Core\TempStore\PrivateTempStore
+   */
   protected $tempStore;
+
+  /**
+   * The SessionManagerInterface.
+   *
+   * @var \Drupal\Core\Session\SessionManagerInterface
+   */
   protected $sessionManager;
 
   /**
@@ -147,7 +163,7 @@ class AuthController extends ControllerBase {
   /**
    * The Auth0 SDK.
    *
-   * @var bool
+   * @var bool|Auth0
    */
   protected $auth0;
 
@@ -172,7 +188,7 @@ class AuthController extends ControllerBase {
    *   The temp store factory.
    * @param \Drupal\Core\Session\SessionManagerInterface $session_manager
    *   The current session.
-   * @param \Drupal\Core\PageCache\ResponsePolicyInterface $page_cache
+   * @param \Drupal\Core\PageCache\ResponsePolicy\KillSwitch $page_cache
    *   Page cache.
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
    *   The logger factory.
@@ -188,7 +204,7 @@ class AuthController extends ControllerBase {
   public function __construct(
     PrivateTempStoreFactory $temp_store_factory,
     SessionManagerInterface $session_manager,
-    ResponsePolicyInterface $page_cache,
+    KillSwitch $page_cache,
     LoggerChannelFactoryInterface $logger_factory,
     EventDispatcherInterface $event_dispatcher,
     ConfigFactoryInterface $config_factory,
@@ -248,8 +264,8 @@ class AuthController extends ControllerBase {
 
     $lockExtraSettings = $this->config->get('auth0_lock_extra_settings');
 
-    if (trim($lockExtraSettings) == "") {
-      $lockExtraSettings = "{}";
+    if (trim($lockExtraSettings) == '') {
+      $lockExtraSettings = '{}';
     }
 
     $returnTo = $request->request->get('returnTo', $request->query->get('returnTo', NULL));
@@ -297,11 +313,8 @@ class AuthController extends ControllerBase {
 
     user_logout();
 
-    // If we are using SSO, we need to logout completely from Auth0,
-    // otherwise they will just logout of their client.
-    return new TrustedRedirectResponse($auth0Api->get_logout_link(
-      \Drupal::request()->getSchemeAndHttpHost(),
-      $this->redirectForSso ? NULL : $this->clientId
+    return new TrustedRedirectResponse($auth0Api->getLogoutLink(
+      \Drupal::request()->getSchemeAndHttpHost()
     ));
   }
 
@@ -322,12 +335,12 @@ class AuthController extends ControllerBase {
       $this->sessionManager->regenerate();
     }
 
-    $sessionStateHandler = new SessionStateHandler(new SessionStore());
+    $sessionStateHandler = new TransientStoreHandler(new SessionStore());
     $states = $this->tempStore->get(AuthController::STATE);
     if (!is_array($states)) {
       $states = [];
     }
-    $nonce = $sessionStateHandler->issue();
+    $nonce = $sessionStateHandler->issue(AuthController::STATE);
     $states[$nonce] = $returnTo === NULL ? '' : $returnTo;
     $this->tempStore->set(AuthController::STATE, $states);
 
@@ -365,7 +378,7 @@ class AuthController extends ControllerBase {
       $additional_params['prompt'] = $prompt;
     }
 
-    return $auth0Api->get_authorize_link($response_type, $redirect_uri, $connection, $state, $additional_params);
+    return $auth0Api->getLoginLink($response_type, $redirect_uri, $connection, $state, $additional_params);
   }
 
   /**
@@ -818,7 +831,7 @@ class AuthController extends ControllerBase {
    *   The edit array.
    */
   protected function auth0UpdateRoles(array $userInfo, User $user, array &$edit) {
-    $this->auth0Logger->notice("Mapping Roles");
+    $this->auth0Logger->notice('Mapping Roles');
     $auth0_claim_to_use_for_role = $this->config->get('auth0_claim_to_use_for_role');
 
     if (isset($auth0_claim_to_use_for_role) && !empty($auth0_claim_to_use_for_role)) {
@@ -887,7 +900,7 @@ class AuthController extends ControllerBase {
    *   The result of the conversion.
    */
   protected function auth0MappingsToPipeList(array $mappings) {
-    $result_text = "";
+    $result_text = '';
     foreach ($mappings as $map) {
       $result_text .= $map['from'] . '|' . $map['user_entered'] . "\n";
     }
@@ -953,7 +966,7 @@ class AuthController extends ControllerBase {
       return $bytes;
     }
     else {
-      throw new \Exception("Unable to generate secure token from OpenSSL.");
+      throw new \Exception('Unable to generate secure token from OpenSSL.');
     }
   }
 
@@ -969,7 +982,7 @@ class AuthController extends ControllerBase {
    * @throws \Exception
    */
   private function generatePassword($length) {
-    return substr(preg_replace("/[^a-zA-Z0-9]\+\//", "", base64_encode($this->getRandomBytes($length + 1))), 0, $length);
+    return substr(preg_replace('/[^a-zA-Z0-9]\+\//', '', base64_encode($this->getRandomBytes($length + 1))), 0, $length);
   }
 
   /**
@@ -998,7 +1011,7 @@ class AuthController extends ControllerBase {
       $user->setEmail($userInfo['email']);
     }
     else {
-      $user->setEmail("change_this_email@" . uniqid() . ".com");
+      $user->setEmail('change_this_email@' . uniqid() . '.com');
     }
 
     // If the username already exists, create a new random one.
@@ -1035,18 +1048,9 @@ class AuthController extends ControllerBase {
   public function verify_email(Request $request) {
     $idToken = $request->get('idToken');
 
-    // Validate the ID Token.
-    $auth0_domain = 'https://' . $this->domain . '/';
-    $auth0_settings = [];
-    $auth0_settings['authorized_iss'] = [$auth0_domain];
-    $auth0_settings['supported_algs'] = [$this->auth0JwtSignatureAlg];
-    $auth0_settings['valid_audiences'] = [$this->clientId];
-    $auth0_settings['client_secret'] = $this->clientSecret;
-    $auth0_settings['secret_base64_encoded'] = $this->secretBase64Encoded;
-    $jwt_verifier = new JWTVerifier($auth0_settings);
-
     try {
-      $user = $jwt_verifier->verifyAndDecode($idToken);
+      $user = $this->helper->getSdk()->decode($idToken);
+      $this->helper->getSdk()->sendVerificationEmail($user->sub);
     }
     catch (\Exception $e) {
       return $this->failLogin($this->t('There was a problem resending the verification email, sorry for the inconvenience.'),
@@ -1060,8 +1064,8 @@ class AuthController extends ControllerBase {
       $client = $this->httpClient;
 
       $client->request('POST', $url, [
-        "headers" => [
-          "Authorization" => "Bearer $idToken",
+        'headers' => [
+          'Authorization' => "Bearer $idToken",
         ],
       ]);
       \Drupal::messenger()->addStatus($this->t('An Authorization email was sent to your account.'));

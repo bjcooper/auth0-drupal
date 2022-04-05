@@ -1,8 +1,6 @@
 <?php
 namespace GuzzleHttp;
 
-use function GuzzleHttp\Psr7\mimetype_from_filename;
-use function GuzzleHttp\Psr7\modify_request;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7;
 use Psr\Http\Message\RequestInterface;
@@ -44,7 +42,7 @@ class PrepareBodyMiddleware
         // Add a default content-type if possible.
         if (!$request->hasHeader('Content-Type')) {
             if ($uri = $request->getBody()->getMetadata('uri')) {
-                if ($type = mimetype_from_filename($uri)) {
+                if ($type = Psr7\mimetype_from_filename($uri)) {
                     $modify['set_headers']['Content-Type'] = $type;
                 }
             }
@@ -65,7 +63,7 @@ class PrepareBodyMiddleware
         // Add the expect header if needed.
         $this->addExpectHeader($request, $options, $modify);
 
-        return $fn(modify_request($request, $modify), $options);
+        return $fn(Psr7\modify_request($request, $modify), $options);
     }
 
     /**

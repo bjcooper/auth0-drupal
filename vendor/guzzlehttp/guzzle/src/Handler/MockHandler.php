@@ -1,10 +1,6 @@
 <?php
 namespace GuzzleHttp\Handler;
 
-use Psr\Http\Message\StreamInterface;
-use function GuzzleHttp\Promise\rejection_for;
-use function GuzzleHttp\Promise\promise_for;
-use function GuzzleHttp\describe_type;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -95,8 +91,8 @@ class MockHandler implements \Countable
         }
 
         $response = $response instanceof \Exception
-            ? rejection_for($response)
-            : promise_for($response);
+            ? \GuzzleHttp\Promise\rejection_for($response)
+            : \GuzzleHttp\Promise\promise_for($response);
 
         return $response->then(
             function ($value) use ($request, $options) {
@@ -112,7 +108,7 @@ class MockHandler implements \Countable
                         fwrite($sink, $contents);
                     } elseif (is_string($sink)) {
                         file_put_contents($sink, $contents);
-                    } elseif ($sink instanceof StreamInterface) {
+                    } elseif ($sink instanceof \Psr\Http\Message\StreamInterface) {
                         $sink->write($contents);
                     }
                 }
@@ -124,7 +120,7 @@ class MockHandler implements \Countable
                 if ($this->onRejected) {
                     call_user_func($this->onRejected, $reason);
                 }
-                return rejection_for($reason);
+                return \GuzzleHttp\Promise\rejection_for($reason);
             }
         );
     }
@@ -144,7 +140,7 @@ class MockHandler implements \Countable
                 $this->queue[] = $value;
             } else {
                 throw new \InvalidArgumentException('Expected a response or '
-                    . 'exception. Found ' . describe_type($value));
+                    . 'exception. Found ' . \GuzzleHttp\describe_type($value));
             }
         }
     }

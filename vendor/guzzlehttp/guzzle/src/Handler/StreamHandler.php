@@ -1,17 +1,6 @@
 <?php
 namespace GuzzleHttp\Handler;
 
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\LazyOpenStream;
-use GuzzleHttp\Psr7\InflateStream;
-use function GuzzleHttp\Promise\rejection_for;
-use function GuzzleHttp\headers_from_lines;
-use function GuzzleHttp\Psr7\stream_for;
-use function GuzzleHttp\normalize_header_keys;
-use function GuzzleHttp\Psr7\copy_to_stream;
-use function GuzzleHttp\is_host_in_noproxy;
-use function GuzzleHttp\default_ca_bundle;
-use function GuzzleHttp\debug_resource;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\FulfilledPromise;
@@ -79,7 +68,7 @@ class StreamHandler
             $e = RequestException::wrapException($request, $e);
             $this->invokeStats($options, $request, $startTime, null, $e);
 
-            return rejection_for($e);
+            return \GuzzleHttp\Promise\rejection_for($e);
         }
     }
 
@@ -114,16 +103,16 @@ class StreamHandler
         $ver = explode('/', $parts[0])[1];
         $status = $parts[1];
         $reason = isset($parts[2]) ? $parts[2] : null;
-        $headers = headers_from_lines($hdrs);
+        $headers = \GuzzleHttp\headers_from_lines($hdrs);
         list($stream, $headers) = $this->checkDecode($options, $headers, $stream);
-        $stream = stream_for($stream);
+        $stream = Psr7\stream_for($stream);
         $sink = $stream;
 
         if (strcasecmp('HEAD', $request->getMethod())) {
             $sink = $this->createSink($stream, $options);
         }
 
-        $response = new Response($status, $headers, $sink, $ver, $reason);
+        $response = new Psr7\Response($status, $headers, $sink, $ver, $reason);
 
         if (isset($options['on_headers'])) {
             try {
@@ -131,7 +120,7 @@ class StreamHandler
             } catch (\Exception $e) {
                 $msg = 'An error was encountered during the on_headers event';
                 $ex = new RequestException($msg, $request, $response, $e);
-                return rejection_for($ex);
+                return \GuzzleHttp\Promise\rejection_for($ex);
             }
         }
 
@@ -161,20 +150,20 @@ class StreamHandler
             : fopen('php://temp', 'r+');
 
         return is_string($sink)
-            ? new LazyOpenStream($sink, 'w+')
-            : stream_for($sink);
+            ? new Psr7\LazyOpenStream($sink, 'w+')
+            : Psr7\stream_for($sink);
     }
 
     private function checkDecode(array $options, array $headers, $stream)
     {
         // Automatically decode responses when instructed.
         if (!empty($options['decode_content'])) {
-            $normalizedKeys = normalize_header_keys($headers);
+            $normalizedKeys = \GuzzleHttp\normalize_header_keys($headers);
             if (isset($normalizedKeys['content-encoding'])) {
                 $encoding = $headers[$normalizedKeys['content-encoding']];
                 if ($encoding[0] === 'gzip' || $encoding[0] === 'deflate') {
-                    $stream = new InflateStream(
-                        stream_for($stream)
+                    $stream = new Psr7\InflateStream(
+                        Psr7\stream_for($stream)
                     );
                     $headers['x-encoded-content-encoding']
                         = $headers[$normalizedKeys['content-encoding']];
@@ -219,7 +208,7 @@ class StreamHandler
         // that number of bytes has been read. This can prevent infinitely
         // reading from a stream when dealing with servers that do not honor
         // Connection: Close headers.
-        copy_to_stream(
+        Psr7\copy_to_stream(
             $source,
             $sink,
             (strlen($contentLength) > 0 && (int) $contentLength > 0) ? (int) $contentLength : -1
@@ -424,7 +413,7 @@ class StreamHandler
             $scheme = $request->getUri()->getScheme();
             if (isset($value[$scheme])) {
                 if (!isset($value['no'])
-                    || !is_host_in_noproxy(
+                    || !\GuzzleHttp\is_host_in_noproxy(
                         $request->getUri()->getHost(),
                         $value['no']
                     )
@@ -448,7 +437,7 @@ class StreamHandler
             // PHP 5.6 or greater will find the system cert by default. When
             // < 5.6, use the Guzzle bundled cacert.
             if (PHP_VERSION_ID < 50600) {
-                $options['ssl']['cafile'] = default_ca_bundle();
+                $options['ssl']['cafile'] = \GuzzleHttp\default_ca_bundle();
             }
         } elseif (is_string($value)) {
             $options['ssl']['cafile'] = $value;
@@ -515,7 +504,7 @@ class StreamHandler
         static $args = ['severity', 'message', 'message_code',
             'bytes_transferred', 'bytes_max'];
 
-        $value = debug_resource($value);
+        $value = \GuzzleHttp\debug_resource($value);
         $ident = $request->getMethod() . ' ' . $request->getUri()->withFragment('');
         $this->addNotification(
             $params,

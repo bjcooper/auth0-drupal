@@ -3,9 +3,6 @@
     "type": "drupal-module",
     "license": "MIT",
     "description": "Single Sign On for Enterprises + Social Login + User/Passwords. For all your Drupal instances. Powered by Auth0.",
-    "require": {
-        "auth0/auth0-php": "^5.1"
-    },
     "scripts": {
         "phpcs": "\"../../../vendor/bin/phpcs\" --standard=Drupal src",
         "phpcbf": "\"../../../vendor/bin/phpcbf\" --standard=Drupal src",
@@ -24,5 +21,11 @@
             "name": "Josh Cunningham",
             "email": "josh.cunningham@auth0.com"
         }
-    ]
+    ],
+    "require": {
+        "symfony/http-client": "^5.4",
+        "php-http/guzzle6-adapter": "^2.0",
+        "nyholm/psr7": "^1.5",
+        "auth0/auth0-php": "^8.1"
+    }
 }
