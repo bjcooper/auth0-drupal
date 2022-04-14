@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => 'b03e7510bed77fef87aaacd497dc08c543e90eb3',
+    'reference' => '5070bc58463b31eec1f55a96d060ad87b6a2d8b9',
     'name' => 'auth0/auth0_drupal',
   ),
   'versions' => 
@@ -27,7 +27,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => 'b03e7510bed77fef87aaacd497dc08c543e90eb3',
+      'reference' => '5070bc58463b31eec1f55a96d060ad87b6a2d8b9',
     ),
     'guzzlehttp/guzzle' => 
     array (

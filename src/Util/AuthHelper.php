@@ -7,7 +7,6 @@ namespace Drupal\auth0\Util;
  * Contains \Drupal\auth0\Util\AuthHelper.
  */
 
-use Auth0\SDK\API\Authentication;
 use Auth0\SDK\Auth0;
 use Auth0\SDK\Configuration\SdkConfiguration;
 use Drupal\auth0\Exception\RefreshTokenFailedException;
@@ -71,6 +70,13 @@ class AuthHelper {
   private $clientSecret;
 
   /**
+   * Auth0 SDK Configuration.
+   *
+   * @var \Auth0\SDK\Configuration\SdkConfiguration
+   */
+  private $sdkConfiguration;
+
+  /**
    * If should redirect for SSO.
    *
    * @var bool
@@ -124,7 +130,20 @@ class AuthHelper {
     $this->secretBase64Encoded = FALSE || $this->config->get(AuthHelper::AUTH0_SECRET_ENCODED);
     $this->auth0Sdk = NULL;
 
-    self::setTelemetry();
+    $auth0_domain = 'https://' . $this->getAuthDomain() . '/';
+
+    $configuration = new SdkConfiguration([
+      'domain' => $auth0_domain,
+      'clientId' => $this->clientId,
+      'clientSecret' => $this->clientSecret,
+      'cookieSecret' => 'someGibberishStuffandJunk',
+      'usePkce' => FALSE,
+      // 'audience' => [$this->clientId],
+      'tokenAlgorithm' => $this->auth0JwtSignatureAlg,
+    ]);
+
+    $this->sdkConfiguration = $configuration;
+
   }
 
   /**
@@ -140,7 +159,7 @@ class AuthHelper {
    *   An auth0 refresh token failed exception.
    */
   public function getUserUsingRefreshToken($refreshToken) {
-    $auth0Api = new Authentication($this->getAuthDomain(), $this->clientId, $this->clientSecret);
+    $auth0Api = $this->getSdk()->authentication();
 
     try {
       $tokens = $auth0Api->refreshToken($refreshToken);
@@ -165,6 +184,15 @@ class AuthHelper {
   }
 
   /**
+   * Get the current Sdk configuration container.
+   *
+   * @return \Auth0\SDK\Configuration\SdkConfiguration
+   */
+  public function getConfiguration() {
+    return $this->sdkConfiguration;
+  }
+
+  /**
    * Gets the Auth0 SDK.
    *
    * @return \Auth0\SDK\Auth0
@@ -172,35 +200,9 @@ class AuthHelper {
    */
   public function getSdk() {
     if (!$this->sdk) {
-      $auth0_domain = 'https://' . $this->getAuthDomain() . '/';
-      $auth0_settings['supported_algs'] = [$this->auth0JwtSignatureAlg];
-      $auth0_settings['valid_audiences'] = [$this->clientId];
-      $auth0_settings['client_secret'] = $this->clientSecret;
-      $auth0_settings['secret_base64_encoded'] = $this->secretBase64Encoded;
-
-      $configuration = new SdkConfiguration([
-        'domain' => $auth0_domain,
-        'clientId' => $this->clientId,
-        'clientSecret' => $this->clientSecret,
-        'audience' => [$this->clientId],
-        'tokenAlgorithm' => $this->auth0JwtSignatureAlg,
-      ]);
-      $this->sdk = new Auth0($configuration);
+      $this->sdk = new Auth0($this->sdkConfiguration);
     }
     return $this->sdk;
-  }
-
-  /**
-   * Extend Auth0 PHP SDK telemetry to report for Drupal.
-   */
-  public static function setTelemetry() {
-    // $oldInfoHeaders = HttpClient::getInfoHeadersData();
-    // if ($oldInfoHeaders) {
-    //   $infoHeaders = HttpTelemetry::Extend($oldInfoHeaders);
-    //   $infoHeaders->setEnvProperty('drupal', \Drupal::VERSION);
-    //   $infoHeaders->setPackage('auth0-drupal', AUTH0_MODULE_VERSION);
-    //   HttpClient::setInfoHeadersData($infoHeaders);
-    // }
   }
 
   /**

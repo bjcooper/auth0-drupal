@@ -9,7 +9,7 @@ namespace Drupal\auth0\Controller;
 
 // Create a variable to store the path to this module.
 // Load vendor files if they exist.
-define('AUTH0_PATH', drupal_get_path('module', 'auth0'));
+define('AUTH0_PATH', \Drupal::service('extension.list.module')->getPath('auth0'));
 
 if (file_exists(AUTH0_PATH . '/vendor/autoload.php')) {
   require_once AUTH0_PATH . '/vendor/autoload.php';
@@ -37,9 +37,6 @@ use Drupal\auth0\Exception\EmailNotVerifiedException;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\auth0\Util\AuthHelper;
 
-use Auth0\SDK\Auth0;
-use Auth0\SDK\API\Authentication;
-use Auth0\SDK\Store\SessionStore;
 use Auth0\SDK\Utility\TransientStoreHandler;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use GuzzleHttp\Client;
@@ -260,7 +257,7 @@ class AuthController extends ControllerBase {
    *   The redirect or a renderable array.
    */
   public function login(Request $request) {
-    global $base_root;
+    global $base_url;
 
     $lockExtraSettings = $this->config->get('auth0_lock_extra_settings');
 
@@ -290,7 +287,7 @@ class AuthController extends ControllerBase {
             'lockExtraSettings' => $lockExtraSettings,
             'configurationBaseUrl' => $this->helper->getTenantCdn($this->config->get('auth0_domain')),
             'showSignup' => $this->config->get('auth0_allow_signup'),
-            'callbackURL' => "$base_root/auth0/callback",
+            'callbackURL' => "$base_url/auth0/callback",
             'state' => $this->getNonce($returnTo),
             'scopes' => AUTH0_DEFAULT_SCOPES,
             'offlineAccess' => $this->offlineAccess,
@@ -309,17 +306,15 @@ class AuthController extends ControllerBase {
    *   The response after logout.
    */
   public function logout() {
-    $auth0Api = new Authentication($this->helper->getAuthDomain(), $this->clientId);
-
     user_logout();
 
-    return new TrustedRedirectResponse($auth0Api->getLogoutLink(
+    return new TrustedRedirectResponse($this->helper->getSdk()->authentication()->getLogoutLink(
       \Drupal::request()->getSchemeAndHttpHost()
     ));
   }
 
   /**
-   * Create a new nonce in session and return it.
+   * Create a new state in session and return it.
    *
    * @param string $returnTo
    *   The return url.
@@ -335,16 +330,18 @@ class AuthController extends ControllerBase {
       $this->sessionManager->regenerate();
     }
 
-    $sessionStateHandler = new TransientStoreHandler(new SessionStore());
+    $configuration = $this->helper->getConfiguration();
+    $sessionStateHandler = new TransientStoreHandler($configuration->getTransientStorage());
     $states = $this->tempStore->get(AuthController::STATE);
     if (!is_array($states)) {
       $states = [];
     }
-    $nonce = $sessionStateHandler->issue(AuthController::STATE);
-    $states[$nonce] = $returnTo === NULL ? '' : $returnTo;
+
+    $state = $sessionStateHandler->issue(AuthController::STATE);
+    $states[$state] = $returnTo === NULL ? '' : $returnTo;
     $this->tempStore->set(AuthController::STATE, $states);
 
-    return $nonce;
+    return $state;
   }
 
   /**
@@ -359,15 +356,14 @@ class AuthController extends ControllerBase {
    *   The URL to redirect to for authorization.
    */
   protected function buildAuthorizeUrl($prompt, $returnTo = NULL) {
-    global $base_root;
+    global $base_url;
 
-    $auth0Api = new Authentication($this->helper->getAuthDomain(), $this->clientId);
-
-    $response_type = 'code';
-    $redirect_uri = "$base_root/auth0/callback";
-    $connection = NULL;
+    $redirect_uri = "$base_url/auth0/callback";
+    // Set our state so we can respect the returnTo once logged in.
     $state = $this->getNonce($returnTo);
-    $additional_params = [];
+    $additional_params = [
+      'state' => $state,
+    ];
     $additional_params['scope'] = AUTH0_DEFAULT_SCOPES;
 
     if ($this->offlineAccess) {
@@ -378,7 +374,7 @@ class AuthController extends ControllerBase {
       $additional_params['prompt'] = $prompt;
     }
 
-    return $auth0Api->getLoginLink($response_type, $redirect_uri, $connection, $state, $additional_params);
+    return $this->helper->getSdk()->login($redirect_uri, $additional_params);
   }
 
   /**
@@ -428,7 +424,7 @@ class AuthController extends ControllerBase {
    *   The Auth0 exception.
    */
   public function callback(Request $request) {
-    global $base_root;
+    global $base_url;
     $problem_logging_in_msg = $this->t('There was a problem logging you in, sorry for the inconvenience.');
 
     $response = $this->checkForError($request, NULL);
@@ -437,21 +433,13 @@ class AuthController extends ControllerBase {
     }
 
     // Set store to null so that the store is set to SessionStore.
-    $this->auth0 = new Auth0([
-      'domain'        => $this->helper->getAuthDomain(),
-      'client_id'     => $this->clientId,
-      'client_secret' => $this->clientSecret,
-      'redirect_uri'  => "$base_root/auth0/callback",
-      'persist_user' => FALSE,
-    ]);
-
-    $userInfo = NULL;
-    $refreshToken = NULL;
+    $this->auth0 = $this->helper->getSdk();
 
     // Exchange the code for the tokens (happens behind the scenes in the SDK).
     try {
-      $userInfo = $this->auth0->getUser();
-      $idToken = $this->auth0->getIdToken();
+      if ($this->auth0->getExchangeParameters()) {
+        $this->auth0->exchange("$base_url/auth0/callback");
+      }
     }
     catch (\Exception $e) {
       return $this->failLogin(
@@ -459,6 +447,10 @@ class AuthController extends ControllerBase {
         $this->t('Failed to exchange code for tokens: @exception', ['@exception' => $e->getMessage()])
       );
     }
+
+    $userInfo = $this->auth0->getUser();
+    $idToken = $this->auth0->getIdToken();
+    $refreshToken = NULL;
 
     if ($this->offlineAccess) {
       try {
@@ -470,14 +462,7 @@ class AuthController extends ControllerBase {
       }
     }
 
-    try {
-      $user = $this->helper->validateIdToken($idToken);
-    }
-    catch (\Exception $e) {
-      return $this->failLogin($problem_logging_in_msg, $this->t('Failed to validate JWT: @exception', ['@exception' => $e->getMessage()]));
-    }
-
-    // State value is validated in $this->auth0->getUser() above.
+    // State value is validated in $this->auth0->exchange above.
     $returnTo = NULL;
     $validatedState = $request->query->get('state');
     $currentSession = $this->tempStore->get(AuthController::STATE);
@@ -494,13 +479,9 @@ class AuthController extends ControllerBase {
         $userInfo['user_id'] = $userInfo['sub'];
       }
 
-      if ($userInfo['sub'] != $user->sub) {
-        return $this->failLogin($problem_logging_in_msg, $this->t('Failed to verify JWT sub'));
-      }
-
       $this->auth0Logger->notice('Good Login');
 
-      return $this->processUserLogin($request, $userInfo, $idToken, $refreshToken, $user->exp, $returnTo);
+      return $this->processUserLogin($request, $userInfo, $idToken, $refreshToken, $userInfo['exp'], $returnTo);
     }
     else {
       return $this->failLogin($problem_logging_in_msg, 'No userinfo found');
@@ -621,10 +602,12 @@ class AuthController extends ControllerBase {
    *   The redirect response after fail.
    */
   protected function failLogin($message, $logMessage) {
+    global $base_url;
+
     \Drupal::messenger()->addError($message);
     $this->logger->error($logMessage);
     if ($this->auth0) {
-      $this->auth0->logout();
+      $this->auth0->logout($base_url);
     }
     return new RedirectResponse('/');
   }
@@ -1038,19 +1021,14 @@ class AuthController extends ControllerBase {
    *
    * @return \Symfony\Component\HttpFoundation\RedirectResponse
    *   The redirect response.
-   *
-   * @throws \Auth0\SDK\Exception\CoreException
-   *   Exception thrown when validating email.
-   *
-   * @deprecated v8.x-2.4 - the legacy send_verification_email endpoint itself is being deprecated and should no longer be called.
    */
-  // phpcs:ignore
-  public function verify_email(Request $request) {
+  public function verifyEmail(Request $request) {
+    global $base_url;
+
     $idToken = $request->get('idToken');
 
     try {
       $user = $this->helper->getSdk()->decode($idToken);
-      $this->helper->getSdk()->sendVerificationEmail($user->sub);
     }
     catch (\Exception $e) {
       return $this->failLogin($this->t('There was a problem resending the verification email, sorry for the inconvenience.'),
@@ -1058,23 +1036,15 @@ class AuthController extends ControllerBase {
     }
 
     try {
-      $userId = $user->sub;
-      $url = "https://$this->domain/api/users/$userId/send_verification_email";
-
-      $client = $this->httpClient;
-
-      $client->request('POST', $url, [
-        'headers' => [
-          'Authorization' => "Bearer $idToken",
-        ],
-      ]);
-      \Drupal::messenger()->addStatus($this->t('An Authorization email was sent to your account.'));
-    }
-    catch (\UnexpectedValueException $e) {
-      \Drupal::messenger()->addError($this->t('Your session has expired.'));
+      $this->helper->getSdk()->management()->jobs()->createSendVerificationEmail($user->sub);
+      \Drupal::messenger()->addStatus($this->t('A verification email was sent to your account.'));
     }
     catch (\Exception $e) {
       \Drupal::messenger()->addError($this->t('Sorry, we could not send the email.'));
+      \Drupal::logger('auth0_drupal')->error(
+        'An error occurred while attempting to send verification email: @error',
+        ['@error' => $e->__toString()]
+      );
     }
 
     return new RedirectResponse('/');
