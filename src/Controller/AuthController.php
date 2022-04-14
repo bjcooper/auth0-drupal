@@ -359,7 +359,7 @@ class AuthController extends ControllerBase {
     global $base_url;
 
     $redirect_uri = "$base_url/auth0/callback";
-    // Set our state so we can respect the returnTo once logged in.
+    // Set our state manually so we can respect the returnTo once logged in.
     $state = $this->getNonce($returnTo);
     $additional_params = [
       'state' => $state,
@@ -432,7 +432,6 @@ class AuthController extends ControllerBase {
       return $response;
     }
 
-    // Set store to null so that the store is set to SessionStore.
     $this->auth0 = $this->helper->getSdk();
 
     // Exchange the code for the tokens (happens behind the scenes in the SDK).

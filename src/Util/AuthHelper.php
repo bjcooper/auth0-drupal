@@ -180,6 +180,7 @@ class AuthHelper {
    *   A user array of named claims from the ID token.
    */
   public function validateIdToken($idToken) {
+    // Decode takes care of verifying and validating the token internally.
     return $this->getSdk()->decode($idToken);
   }
 
