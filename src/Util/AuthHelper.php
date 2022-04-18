@@ -132,17 +132,19 @@ class AuthHelper {
 
     $auth0_domain = 'https://' . $this->getAuthDomain() . '/';
 
-    $configuration = new SdkConfiguration([
-      'domain' => $auth0_domain,
-      'clientId' => $this->clientId,
-      'clientSecret' => $this->clientSecret,
-      'cookieSecret' => 'someGibberishStuffandJunk',
-      'usePkce' => FALSE,
+    if ($this->clientId) {
+      $configuration = new SdkConfiguration([
+        'domain' => $auth0_domain,
+        'clientId' => $this->clientId,
+        'clientSecret' => $this->clientSecret,
+        'cookieSecret' => 'someGibberishStuffandJunk',
+        'usePkce' => FALSE,
       // 'audience' => [$this->clientId],
-      'tokenAlgorithm' => $this->auth0JwtSignatureAlg,
-    ]);
+        'tokenAlgorithm' => $this->auth0JwtSignatureAlg,
+      ]);
 
-    $this->sdkConfiguration = $configuration;
+      $this->sdkConfiguration = $configuration;
+    }
 
   }
 
