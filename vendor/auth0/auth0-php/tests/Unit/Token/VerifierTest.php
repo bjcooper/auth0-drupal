@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Auth0\SDK\Configuration\SdkConfiguration;
 use Auth0\SDK\Token;
 use Auth0\SDK\Token\Verifier;
+use Auth0\Tests\Utilities\MockDomain;
 use Auth0\Tests\Utilities\TokenGenerator;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -12,7 +13,7 @@ uses()->group('token', 'token.verifier');
 
 beforeEach(function() {
     $this->configuration = new SdkConfiguration([
-        'domain' => uniqid(),
+        'domain' => MockDomain::valid(),
         'clientId' => uniqid(),
         'cookieSecret' => uniqid(),
         'redirectUri' => uniqid(),
@@ -26,7 +27,7 @@ dataset('jwksUri', static function () {
 dataset('tokenHs256', static function () {
     $token = (new TokenGenerator())->withHs256([]);
     [$headers, $claims, $signature] = explode('.', $token);
-    $payload = join('.', [$headers, $claims]);
+    $payload = implode('.', [$headers, $claims]);
     $signature = TokenGenerator::decodePart($signature, false);
 
     yield [ $token, $payload, $signature, $headers ];
@@ -36,7 +37,7 @@ dataset('tokenRs256', static function () {
     $keyPair = TokenGenerator::generateRsaKeyPair();
     $token = (new TokenGenerator())->withRs256([], $keyPair['private'], ['kid' => '__test_kid__']);
     [$headers, $claims, $signature] = explode('.', $token);
-    $payload = join('.', [$headers, $claims]);
+    $payload = implode('.', [$headers, $claims]);
     $signature = TokenGenerator::decodePart($signature, false);
 
     // Mimic JWKS response format: strip opening and closing comment lines from public key, remove line breaks.
@@ -58,7 +59,7 @@ test('verify() throws an error when token alg claim is not supported', function(
     new Verifier($this->configuration, '', '', ['alg' => uniqid()]);
 })->throws(\Auth0\SDK\Exception\InvalidTokenException::class);
 
-test('verify() throws an exception signature is incorrect', function($keyPair, $token, $payload, $signature, $headers, $jwksUri, $jwksCacheKey): void {
+test('verify() throws an exception when signature is incorrect', function($keyPair, $token, $payload, $signature, $headers, $jwksUri, $jwksCacheKey): void {
     $headers = TokenGenerator::decodePart($headers);
     $cache = new ArrayAdapter();
     $item = $cache->getItem($jwksCacheKey);

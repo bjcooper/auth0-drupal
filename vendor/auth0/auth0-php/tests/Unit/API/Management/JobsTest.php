@@ -12,22 +12,26 @@ test('get() issues an appropriate request', function(): void {
     $this->endpoint->get('__test_id__');
 
     expect($this->api->getRequestMethod())->toEqual('GET');
-    expect($this->api->getRequestUrl())->toEqual('https://api.test.local/api/v2/jobs/__test_id__');
+    expect($this->api->getRequestUrl())->toEndWith('/api/v2/jobs/__test_id__');
 });
 
 test('getErrors() issues an appropriate request', function(): void {
     $this->endpoint->getErrors('__test_id__');
 
     expect($this->api->getRequestMethod())->toEqual('GET');
-    expect($this->api->getRequestUrl())->toEqual('https://api.test.local/api/v2/jobs/__test_id__/errors');
+    expect($this->api->getRequestUrl())->toEndWith('/api/v2/jobs/__test_id__/errors');
 });
 
 test('createImportUsers() issues an appropriate request', function(): void {
-    $importPath = join(DIRECTORY_SEPARATOR, [AUTH0_TESTS_DIR, 'json', 'test-import-users-file.json']);
+    // Create temporary JSON file
+    $import = tmpfile();
+    fwrite($import, '[{"email":"php-sdk-test-import-user-job@auth0.com","email_verified":true,"app_metadata":{"roles":["admin","super"],"plan":"premium"},"user_metadata":{"theme":"dark"}}]');
+
+    $path = stream_get_meta_data($import)['uri'];
     $keyOffset = 3;
 
     $this->endpoint->createImportUsers(
-        $importPath,
+        $path,
         '__test_conn_id__',
         [
             'upsert' => true,
@@ -37,7 +41,7 @@ test('createImportUsers() issues an appropriate request', function(): void {
     );
 
     expect($this->api->getRequestMethod())->toEqual('POST');
-    expect($this->api->getRequestUrl())->toEqual('https://api.test.local/api/v2/jobs/users-imports');
+    expect($this->api->getRequestUrl())->toEndWith('/api/v2/jobs/users-imports');
 
     $headers = $this->api->getRequestHeaders();
     expect($headers['Content-Type'][0])->toStartWith('multipart/form-data');
@@ -46,8 +50,8 @@ test('createImportUsers() issues an appropriate request', function(): void {
     $form_body_arr = explode("\r\n", $form_body);
 
     // Test that the form data contains our import file content.
-    $import_content = file_get_contents($importPath);
-    expect($form_body)->toContain('name="users"; filename="test-import-users-file.json"');
+    $import_content = file_get_contents($path);
+    expect($form_body)->toContain(sprintf('name="users"; filename="%s"', basename($path)));
     expect($form_body)->toContain($import_content);
 
     $conn_id_key = array_search('Content-Disposition: form-data; name="connection_id"', $form_body_arr);
@@ -65,6 +69,9 @@ test('createImportUsers() issues an appropriate request', function(): void {
     $ext_id_key = array_search('Content-Disposition: form-data; name="external_id"', $form_body_arr);
     $this->assertNotEmpty($ext_id_key);
     expect($form_body_arr[$ext_id_key + $keyOffset])->toEqual('__test_ext_id__');
+
+    // Delete temporary file
+    fclose($import);
 });
 
 test('createExportUsers() issues an appropriate request', function(): void {
@@ -82,7 +89,7 @@ test('createExportUsers() issues an appropriate request', function(): void {
     $this->endpoint->createExportUsers($mock);
 
     expect($this->api->getRequestMethod())->toEqual('POST');
-    expect($this->api->getRequestUrl())->toEqual('https://api.test.local/api/v2/jobs/users-exports');
+    expect($this->api->getRequestUrl())->toEndWith('/api/v2/jobs/users-exports');
     expect($this->api->getRequestQuery())->toBeEmpty();
 
     $request_body = $this->api->getRequestBody();
@@ -118,7 +125,7 @@ test('createSendVerificationEmail() issues an appropriate request', function(): 
     $this->endpoint->createSendVerificationEmail($mock->userId, $mock->body);
 
     expect($this->api->getRequestMethod())->toEqual('POST');
-    expect($this->api->getRequestUrl())->toEqual('https://api.test.local/api/v2/jobs/verification-email');
+    expect($this->api->getRequestUrl())->toEndWith('/api/v2/jobs/verification-email');
     expect($this->api->getRequestQuery())->toBeEmpty();
 
     $body = $this->api->getRequestBody();

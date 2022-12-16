@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Auth0\Tests\Utilities;
 
 use Firebase\JWT\JWT;
+use RuntimeException;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 /**
  * Class TokenGenerator.
@@ -36,7 +38,7 @@ class TokenGenerator
     ): array {
         $defaults = [
             'sub' => '__test_sub__',
-            'iss' => 'https://__test_domain__/',
+            'iss' => 'https://domain.test/',
             'aud' => '__test_client_id__',
             'nonce' => '__test_nonce__',
             'auth_time' => time() - 100,
@@ -48,14 +50,36 @@ class TokenGenerator
         return array_merge($defaults, $overrides);
     }
 
+    public static function getOpenSslError(): string
+    {
+		$errors = [];
+
+		while ($error = openssl_error_string()) {
+			$errors[] = $error;
+		}
+
+        return implode(', ', $errors);
+    }
+
     public static function generateRsaKeyPair(): array
     {
-        $privateKeyResource = openssl_pkey_new([
+        $config = [
             'digest_alg' => 'sha256',
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ]);
+        ];
 
-        openssl_pkey_export($privateKeyResource, $privateKey);
+        $privateKeyResource = openssl_pkey_new($config);
+
+        if ($privateKeyResource === false) {
+            throw new RuntimeException("OpenSSL reported an error: " . self::getOpenSslError());
+        }
+
+        $export = openssl_pkey_export($privateKeyResource, $privateKey);
+
+        if ($export === false) {
+            throw new RuntimeException("OpenSSL reported an error: " . self::getOpenSslError());
+        }
+
         $publicKey = openssl_pkey_get_details($privateKeyResource);
 
         $resCsr = openssl_csr_new([], $privateKeyResource);
@@ -71,12 +95,23 @@ class TokenGenerator
 
     public static function generateDsaKeyPair(): array
     {
-        $privateKeyResource = openssl_pkey_new([
+        $config = [
             'digest_alg' => 'sha256',
             'private_key_type' => OPENSSL_KEYTYPE_DSA,
-        ]);
+        ];
 
-        openssl_pkey_export($privateKeyResource, $privateKey);
+        $privateKeyResource = openssl_pkey_new($config);
+
+        if ($privateKeyResource === false) {
+            throw new RuntimeException("OpenSSL reported an error: " . self::getOpenSslError());
+        }
+
+        $export = openssl_pkey_export($privateKeyResource, $privateKey);
+
+        if ($export === false) {
+            throw new RuntimeException("OpenSSL reported an error: " . self::getOpenSslError());
+        }
+
         $publicKey = openssl_pkey_get_details($privateKeyResource);
 
         $resCsr = openssl_csr_new([], $privateKeyResource);
@@ -156,7 +191,7 @@ class TokenGenerator
         }
 
         [$headers, $claims, $signature] = explode('.', $token);
-        $payload = join('.', [$headers, $claims]);
+        $payload = implode('.', [$headers, $claims]);
         $signature = (string) TokenGenerator::decodePart($signature, false);
         $claims = (array) TokenGenerator::decodePart($claims, true);
         $headers = (array) TokenGenerator::decodePart($headers, true);
@@ -171,6 +206,13 @@ class TokenGenerator
         $response->claims = $claims;
         $response->jwks = 'https://test.auth0.com/.well-known/jwks.json';
         $response->cache = hash('sha256', 'https://test.auth0.com/.well-known/jwks.json');
+
+        $cache = new ArrayAdapter();
+        $item = $cache->getItem($response->cache);
+        $item->set(['__test_kid__' => ['x5c' => [$keys['cert']]]]);
+        $cache->save($item);
+
+        $response->cached = $cache;
 
         return $response;
     }

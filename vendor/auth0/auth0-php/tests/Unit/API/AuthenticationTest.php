@@ -5,13 +5,14 @@ declare(strict_types=1);
 use Auth0\SDK\API\Authentication;
 use Auth0\SDK\Auth0;
 use Auth0\SDK\Configuration\SdkConfiguration;
+use Auth0\Tests\Utilities\MockDomain;
 
 uses()->group('authentication');
 
 beforeEach(function(): void {
 
     $this->configuration = new SdkConfiguration([
-        'domain' => 'https://test-domain.auth0.com',
+        'domain' => MockDomain::valid(),
         'cookieSecret' => uniqid(),
         'clientId' => '__test_client_id__',
         'redirectUri' => 'https://some-app.auth0.com',
@@ -23,14 +24,10 @@ beforeEach(function(): void {
     $this->sdk = new Auth0($this->configuration);
 });
 
-test('__construct() fails without a configuration', function(): void {
-    new Authentication(null);
-})->throws(\Auth0\SDK\Exception\ConfigurationException::class, \Auth0\SDK\Exception\ConfigurationException::MSG_CONFIGURATION_REQUIRED);
-
 test('__construct() accepts a configuration as an array', function(): void {
     $auth = new Authentication([
-        'strategy' => 'api',
-        'domain' => uniqid(),
+        'strategy' => SdkConfiguration::STRATEGY_API,
+        'domain' => MockDomain::valid(),
         'audience' => [uniqid()]
     ]);
 
@@ -197,6 +194,42 @@ test('emailPasswordlessStart() is properly formatted', function(): void {
     expect($requestBody['connection'])->toEqual('email');
     expect($requestBody['email'])->toEqual('someone@somewhere.somehow');
     expect($requestBody['send'])->toEqual('code');
+});
+
+test('emailPasswordlessStart() returns authParams with default configured scopes when none are provided', function(): void {
+    $this->configuration->setClientSecret(uniqid());
+    $this->sdk->authentication()->emailPasswordlessStart('someone@somewhere.somehow', 'code');
+
+    $request = $this->sdk->authentication()->getHttpClient()->getLastRequest()->getLastRequest();
+    $requestBody = json_decode($request->getBody()->__toString(), false);
+
+    expect($requestBody)->toHaveProperties(['authParams']);
+    expect($requestBody->authParams)->toBeObject()->toHaveProperties(['scope']);
+    expect($requestBody->authParams->scope)->toEqual('scope1 scope2 scope3');
+});
+
+test('emailPasswordlessStart() returns authParams with default configured scopes when an empty array is configured', function(): void {
+    $this->configuration->setClientSecret(uniqid());
+    $this->sdk->authentication()->emailPasswordlessStart('someone@somewhere.somehow', 'code', []);
+
+    $request = $this->sdk->authentication()->getHttpClient()->getLastRequest()->getLastRequest();
+    $requestBody = json_decode($request->getBody()->__toString(), false);
+
+    expect($requestBody)->toHaveProperties(['authParams']);
+    expect($requestBody->authParams)->toBeObject()->toHaveProperties(['scope']);
+    expect($requestBody->authParams->scope)->toEqual('scope1 scope2 scope3');
+});
+
+test('emailPasswordlessStart() returns authParams correctly configured when provided', function(): void {
+    $this->configuration->setClientSecret(uniqid());
+    $this->sdk->authentication()->emailPasswordlessStart('someone@somewhere.somehow', 'code', ['scope' => 'test1 test2']);
+
+    $request = $this->sdk->authentication()->getHttpClient()->getLastRequest()->getLastRequest();
+    $requestBody = json_decode($request->getBody()->__toString(), false);
+
+    expect($requestBody)->toHaveProperties(['authParams']);
+    expect($requestBody->authParams)->toBeObject()->toHaveProperties(['scope']);
+    expect($requestBody->authParams->scope)->toEqual('test1 test2');
 });
 
 test('smsPasswordlessStart() throws an ArgumentException if `phoneNumber` is empty', function(): void {

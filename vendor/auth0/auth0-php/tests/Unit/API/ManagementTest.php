@@ -8,6 +8,7 @@ use Auth0\SDK\Auth0;
 use Auth0\SDK\Configuration\SdkConfiguration;
 use Auth0\SDK\Utility\HttpRequest;
 use Auth0\Tests\Utilities\HttpResponseGenerator;
+use Auth0\Tests\Utilities\MockDomain;
 use Auth0\Tests\Utilities\TokenGenerator;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -15,7 +16,7 @@ uses()->group('management');
 
 beforeEach(function(): void {
     $this->configuration = new SdkConfiguration([
-        'domain' => 'https://test-domain.auth0.com',
+        'domain' => MockDomain::valid(),
         'cookieSecret' => uniqid(),
         'clientId' => '__test_client_id__',
         'redirectUri' => 'https://some-app.auth0.com',
@@ -28,14 +29,22 @@ beforeEach(function(): void {
     $this->sdk = new Auth0($this->configuration);
 });
 
-test('__construct() fails without a configuration', function(): void {
-    new Management(null);
-})->throws(\Auth0\SDK\Exception\ConfigurationException::class, \Auth0\SDK\Exception\ConfigurationException::MSG_CONFIGURATION_REQUIRED);
-
 test('getHttpClient() fails without a managementToken, if client id and secret are not configured', function(): void {
     $this->configuration->setManagementToken(null);
     $this->sdk->management()->blacklists();
 })->throws(\Auth0\SDK\Exception\ConfigurationException::class, \Auth0\SDK\Exception\ConfigurationException::MSG_REQUIRES_MANAGEMENT_KEY);
+
+test('getHttpClient() fails if tenant is not configured with required scope(s)', function(): void {
+    $this->configuration->setClientSecret(uniqid());
+    $this->configuration->setManagementToken(null);
+
+    $authentication = new Authentication($this->configuration);
+    $authentication->getHttpClient()->mockResponse(
+        HttpResponseGenerator::create('{"error":"access_denied","error_description":"Client is not authorized to access"}', 403),
+    );
+
+    $this->sdk->management()->getHttpClient($authentication);
+})->throws(\Auth0\SDK\Exception\NetworkException::class, sprintf(\Auth0\SDK\Exception\NetworkException::MSG_NETWORK_REQUEST_REJECTED, ''));
 
 test('blacklists() returns an instance of Auth0\SDK\API\Management\Blacklists', function(): void {
     $class = $this->sdk->management()->blacklists();
