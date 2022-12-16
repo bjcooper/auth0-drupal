@@ -338,7 +338,7 @@ class AuthController extends ControllerBase {
     }
 
     $state = $sessionStateHandler->issue(AuthController::STATE);
-    $states[$state] = $returnTo === NULL ? '' : $returnTo;
+    $states[$state] = $returnTo ?? '';
     $this->tempStore->set(AuthController::STATE, $states);
 
     return $state;
@@ -780,14 +780,14 @@ class AuthController extends ControllerBase {
       ];
 
       foreach ($mappings as $mapping) {
-        $this->auth0Logger->notice('mapping ' . $mapping);
+        $this->auth0Logger->notice('mapping ' . $mapping[0]);
 
         $key = $mapping[1];
         if (in_array($key, $skip_mappings)) {
           $this->auth0Logger->notice('skipping mapping handled already by Auth0 module ' . $mapping);
         }
         else {
-          $value = isset($userInfo[$mapping[0]]) ? $userInfo[$mapping[0]] : '';
+          $value = $userInfo[$mapping[0]] ?? '';
           $current_value = $user->get($key)->value;
           if ($current_value === $value) {
             $this->auth0Logger->notice('value is unchanged ' . $key);
@@ -817,7 +817,7 @@ class AuthController extends ControllerBase {
     $auth0_claim_to_use_for_role = $this->config->get('auth0_claim_to_use_for_role');
 
     if (isset($auth0_claim_to_use_for_role) && !empty($auth0_claim_to_use_for_role)) {
-      $claim_value = isset($userInfo[$auth0_claim_to_use_for_role]) ? $userInfo[$auth0_claim_to_use_for_role] : '';
+      $claim_value = $userInfo[$auth0_claim_to_use_for_role] ?? '';
       $this->auth0Logger->notice('claim_value ' . print_r($claim_value, TRUE));
 
       $claim_values = [];
